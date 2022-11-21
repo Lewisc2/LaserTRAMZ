@@ -1,5 +1,5 @@
 # U-Pb-LA-ICP-MS-Reduction
-## Program for reducing U-Pb data collected by laser ablation.
+## Program for reducing U-Pb data collected by laser ablation. Sister to Lasertram-DB (Lubbers et al., 202x)
 
 ## Main To-Do's:
 
