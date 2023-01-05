@@ -15,7 +15,7 @@
 	* Will require some string formatting
 	* Need to expand list in get_approved function as well.
 	
-	*Completed 12/2022
+	*Completed 12/2022*
   
 3. Add option to use 1st or 2nd order regression in second half of program titled 'CommonPbandnorm'
 4. Add Box and Whisker plot + option to plot up sample numbers for fliers / discordant data.
