@@ -22,3 +22,5 @@
 	* Points to be written down by user and inspected manually
 
 5. In the very far future, try to calibrate 207/235 on the laser very well, then calculate 238 from 235 in order to deal with detector linearity issues for very high U zircons.
+	* Cross check by calculating 207/235 on very old zircons - likely oracle, FC1, 91500, Tan-Bra
+	* May need to add an option in second part of program to get ages from Wetherill Concordia. Tara-Wasserburg not so good for old ages.
