@@ -32,7 +32,6 @@ from scipy import stats
 #%%
 # define constants for reducing U-Pb data
 lambda_238 = 1.55125e-10 #
-lambda_238err = 1.55125e-10*0.16 #
 lambda_235 = 9.8485e-10 #
 lambda_232 = 4.9475e-11 # 
 lambda_230 = 9.158e-6
@@ -48,7 +47,7 @@ class calc_fncs:
     def get_data_TW_regressions(df):
         """
         """
-        pts_x = np.array([df.U238_Pb206,np.zeros_like(df['SK207_206'])]).T
+        pts_x = np.array([df['U238_Pb206'],np.zeros_like(df['SK207_206'])]).T
         pts_y = np.array([df['207Pb/206Pb'],df['SK207_206']]).T
         discordia_t = np.zeros((len(df),2))
     
@@ -139,7 +138,13 @@ class calc_fncs:
         #     return ell2_params
     
     def get_ellipse(df,power):
-        x2 = df['U238_Pb206']
+        callingmethod = sys._getframe().f_back.f_code.co_name
+        if callingmethod == 'correct_sample_ages':
+            df.replace([np.inf,-np.inf],np.nan,inplace=True)
+            df.dropna(inplace=True)
+            x2 = 1/df['206Pb/238U Corrected']
+        else:
+            x2 = df['U238_Pb206']
         y2 = df['Pb207_Pb206']
         
         cov2 = np.cov(x2,y2)
@@ -195,7 +200,7 @@ class calc_fncs:
                 pass
         if ellipse_mode_selector == 'Point Estimates':
             ax.plot(df.U238_Pb206,df.Pb207_Pb206,'kd')
-            ax.errorbar(df.U238_Pb206,df.Pb207_Pb206,df['206/238 1st Order'],df['207Pb/206Pb'],fmt='none',ecolor='k',elinewidth=0.5)
+            ax.errorbar(df.U238_Pb206,df.Pb207_Pb206,xerr=df['206/238 Reg. err'],yerr=df['SE 207/206'],fmt='none',ecolor='k',elinewidth=0.5)
             ax.plot(x_TW,y_TW,'k',lw=1)
         elif ellipse_mode_selector == 'Ellipses':
             for i in df.SampleLabel.unique():
@@ -270,10 +275,21 @@ class calc_fncs:
     
     
     
-    def correct_standard_ages(df,std_txt,regression_selector,ellipse_mode_selector,power):
+    def correct_standard_ages(df,std_txt,regression_selector,ellipse_mode_selector,power,Pb_Th_std_crct_selector):
         """
         function to calculate Pb and fractionation factor corrected ages
         """
+        # create a dictionary that holds known or estimated U/Th ratios of zircon and associated magma for standards, as well as common Pb ratios
+        stds_dict = {'Temora': [2.4,0.79200,18.0528,15.5941], # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
+                     'FishCanyon': [1.496558,0.454545,18.4275,15.5425], # Schmitz and Bowring 2001; only one with measured common Pb so far
+                     '94-35': [1,0.33,18.6191,15.626],
+                     'Plesovice': [10.7,0.25,18.1804,15.6022], # Slama et al 2008
+                     'R33': [1.4,0.46200,18.0487,15.5939], # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
+                     '91500': [1,0.33,16.9583,15.4995], # Wiedenbeck et al 1995
+                     'FC1': [1.7,0.56100,16.892,15.492], # Paces and Miller 1993. Ambiguous Th correction > assumed D = 0.33
+                     'Oracle': [2.2,0.725999,16.2726,15.4099], # unpublished; Bowring > assumed D = 0.33
+                     'Tan-Bra': [1.2,0.39600,14.0716,14.8653], # Pecha unpublished > assumed D = 0.33
+                     'OG1': [1.3,0.42900,11.8337,13.6071]} # Stern et al 2009. Ambiguous Th correction > assumed D = 0.33
         # get points needed for correction
         points,concordia_238_206,pts_pb_r,na,naII = calc_fncs.get_projections(df,ellipse_mode_selector,power)
         
@@ -281,7 +297,12 @@ class calc_fncs:
         common_filter = []
         
         pb_m = df['207Pb/206Pb'] # measured 207/206
-        common = df['SK207_206']
+        if Pb_Th_std_crct_selector == 'Common Pb':
+            common = df['SK207_206']
+        elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
+            df['SK207_206'] = stds_dict.get(std_txt)[3]/stds_dict.get(std_txt)[2] # calculated Stacey-Kramers 207/206 overwriting the input 207/206 should manual values be requested
+            common = df['SK207_206']
+            
         
         for i in common:
             if i <= 0:
@@ -307,18 +328,9 @@ class calc_fncs:
         df['f'] = f
         
         df['counts_pb206r'] = df['206Pb'] * (1-df['f'])
-        df['206Pb/238Upbc'] = 1/concordia_238_206-(1/concordia_238_206*f)
+        df['206Pb/238Upbc_numerical'] = 1/df['U238_Pb206']-(1/df['U238_Pb206']*f)
+        df['206Pb/238Upbc'] = 1/concordia_238_206
         df['206Pb/238Uc_age'] = np.log(df['206Pb/238Upbc'] + 1) / lambda_238
-        stds_dict = {'Temora': [2.4,0.79200], # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
-                     'FishCanyon': [1.496558,0.454545], # Schmitz and Bowring 2001
-                     '94_35': [1,0.33],
-                     'Plesovice': [10.7,0.25], # Slama et al 2008
-                     'R33': [1.4,0.46200], # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
-                     '91500': [1,0.33], # Wiedenbeck et al 1995
-                     'FC1': [1.7,0.56100], # Paces and Miller 1993. Ambiguous Th correction > assumed D = 0.33
-                     'Oracle': [2.2,0.725999], # unpublished; Bowring
-                     'Tan-Bra': [1.2,0.39600], # Pecha unpublished
-                     'OG1': [1.3,0.42900]} # Stern et al 2009. Ambiguous Th correction > assumed D = 0.33
         UThstd,UThstd_rx  = stds_dict.get(std_txt)[0],stds_dict.get(std_txt)[1]
         DThU = (1/UThstd)/(1/UThstd_rx)
         df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*(DThU-1))
@@ -326,14 +338,19 @@ class calc_fncs:
         UTh_std = stds_dict.get(std_txt)[0]
         UTh_std_m = df['238U'].mean()/df['232Th'].mean()
         
-                
         
         avg_std_age = df['206Pb/238Uc_age'].mean()
-        if regression_selector == '1st Order':
-            avg_reg_err = df['SE 206/238 1st Order'].mean()
-        elif regression_selector == '2nd Order':
-            avg_reg_err = df['SE 206/238 2nd Order'].mean()
         avg_std_age_Thcrct = df['206Pb/238UPbTh_age'].mean()
+        
+        if ellipse_mode_selector == 'Point Estiamtes':
+            if regression_selector == '1st Order':
+                avg_reg_err = df['SE 206/238 1st Order'].mean()
+            elif regression_selector == '2nd Order':
+                avg_reg_err = df['SE 206/238 2nd Order'].mean()
+            elif regression_selector == 'Exp.':
+                avg_reg_err = df['SE 206/238 Exp'].mean()
+        else:
+            avg_reg_err = 1
         
         return avg_std_age,avg_std_age_Thcrct,avg_reg_err,UTh_std,UTh_std_m
         
@@ -343,97 +360,217 @@ class calc_fncs:
         """
         function to calculate Pb and fractionation factor corrected ages
         """
-        # df = df.reset_index()
-        # get points needed for correction
-        points,concordia_238_206,pts_pb_r,n,a = calc_fncs.get_projections(df,ellipse_mode_selector,power)
         
-        # set up empty arrays to be filled for common lead corrections
-        common_filter = []
-        
-        pb_m = df['207Pb/206Pb'] # measured 207/206
-        common = df['SK207_206']
-        
-        for i in common:
-            if i <= 0:
-                common_filter.append(0)
-            else:
-                common_filter.append(i)
-        
-        # calculate fraction of common Pb
-        f_ = (pb_m - pts_pb_r) / (common - pts_pb_r)
-        # set up array to set f = 0 if point lies on or below Concordia (i.e., no common Pb present)
-        f = []
-        
-        for k,j in zip(common_filter,f_):
-            if k <= 0:
-                f.append(0)
-            elif j < 0:
-                f.append(0)
-            else:
-                f.append(j)
-                
-        # append the calculations to the sample dataframe
-        df['207Pb/206Pbr'] = pts_pb_r
-        # df['207Pb/206Pbcommon'] = common_filter
-        df['f'] = f
-        
-        df['counts_pb206r'] = df['206Pb'] * (1-df['f'])
-        df['206Pb/238Upbc'] = 1/concordia_238_206-(1/concordia_238_206*f)
-        df['206Pb/238Uc_age'] = np.log(df['206Pb/238Upbc'] + 1) / lambda_238
-    
-        
-        # will need input for which standard to use now! standard will need to be calculated by a separate function and called/input here.
-        frac_factor,tims_age,tims_error,std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.get_standard_fracfctr(std,std_txt,Pb_Th_std_crct_selector,regression_selector,
-                                                                                                                ellipse_mode_selector,power)
-        df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
-        
-        if Pb_Th_std_crct_selector == 'Common Pb':
-            #propagate errors
-            #error on fractionation factor. includes error from ID-TIMS and ICPMS
-            dfrac = np.abs(frac_factor)*((1/tims_age)**2*tims_error**2 + (1/std_avg)**2*std_avgerr**2)**(1/2)
-            #error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
-            dage = np.abs(df['206Pb/238Uc_age'])*((1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/100)**2 + (1/frac_factor)**2*dfrac**2)**(1/2)
-            #error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
-            dinit = np.abs(common)*((1/df['SK207_204'])**2*0.3**2 + (1/df['SK206_204'])**2*1**2)**(1/2)
-            # total propagated error
-            dagetot = (dage**2 +  df['SE 206/204']**2 + dinit**2)**(1/2)
+        if ellipse_mode_selector == 'Point Estimates':
+            # df = df.reset_index()
+            # get points needed for correction
+            points,concordia_238_206,pts_pb_r,n,a = calc_fncs.get_projections(df,ellipse_mode_selector,power)
             
-            df['∆206/238 age (meas.)'] = dage
-            df['∆206/238 age (tot.)'] = dagetot
-        elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
-            if UTh_std_norm == 'Off':
-                df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1))
-                df['206Pb/238UPbTh_age'] = (np.log(df['206Pb/238UPbThc'] + 1) / lambda_238)*frac_factor
-                #propagate errors
-                #error on fractionation factor. includes error from ID-TIMS and ICPMS
-                dfrac = np.abs(frac_factor)*((1/tims_age)**2*tims_error**2 + (1/avg_std_age_Thcrct)**2*std_avgerr**2)**(1/2)
-                #error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
-                dage = np.abs(df['206Pb/238Uc_age'])*((1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/100)**2 + (1/frac_factor)**2*dfrac**2)**(1/2)
-                #error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
-                dinit = np.abs(common)*((1/df['SK207_204'])**2*0.3**2 + (1/df['SK206_204'])**2*1**2)**(1/2)
-                # total propagated error
-                dagetot = (dage**2 +  df['SE 206/204']**2 + dinit**2)**(1/2)
-                
-                df['∆206/238 age (meas.)'] = dage
-                df['∆206/238 age (tot.)'] = dagetot
-            elif UTh_std_norm == 'On':
-                ThUzrn_calc = 1/(UTh_std/(UTh_std_m) * (df['238U']/df['232Th']))
-                df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*((ThUzrn_calc/ThU_magma)-1))
-                df['206Pb/238UPbTh_age'] = (np.log(df['206Pb/238UPbThc'] + 1) / lambda_238)*frac_factor
-                #propagate errors
-                #error on fractionation factor. includes error from ID-TIMS and ICPMS
-                dfrac = np.abs(frac_factor)*((1/tims_age)**2*tims_error**2 + (1/avg_std_age_Thcrct)**2*std_avgerr**2)**(1/2)
-                #error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
-                dage = np.abs(df['206Pb/238Uc_age'])*((1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/100)**2 + (1/frac_factor)**2*dfrac**2)**(1/2)
-                #error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
-                dinit = np.abs(common)*((1/df['SK207_204'])**2*0.3**2 + (1/df['SK206_204'])**2*1**2)**(1/2)
-                # total propagated error
-                dagetot = (dage**2 +  df['SE 206/204']**2 + dinit**2)**(1/2)
-                
-                df['∆206/238 age (meas.)'] = dage
-                df['∆206/238 age (tot.)'] = dagetot
+            # set up empty arrays to be filled for common lead corrections
+            common_filter = []
+            
+            pb_m = df['207Pb/206Pb'] # measured 207/206
+            common = df['SK207_206']
+            
+            for i in common:
+                if i <= 0:
+                    common_filter.append(0)
+                else:
+                    common_filter.append(i)
+            
+            # calculate fraction of common Pb
+            f_ = (pb_m - pts_pb_r) / (common - pts_pb_r)
+            # set up array to set f = 0 if point lies on or below Concordia (i.e., no common Pb present)
+            f = []
+            
+            for k,j in zip(common_filter,f_):
+                if k <= 0:
+                    f.append(0)
+                elif j < 0:
+                    f.append(0)
+                else:
+                    f.append(j)
+                    
+            # append the calculations to the sample dataframe
+            df['207Pb/206Pbr'] = pts_pb_r
+            # df['207Pb/206Pbcommon'] = common_filter
+            df['f'] = f
+            
+            df['counts_pb206r'] = df['206Pb'] * (1-df['f'])
+            df['206Pb/238Upbc_numerical'] = 1/df['U238_Pb206']-(1/df['U238_Pb206']*f)
+            df['206Pb/238Upbc'] = 1/concordia_238_206
         
-        return df
+            
+            # will need input for which standard to use now! standard will need to be calculated by a separate function and called/input here.
+            frac_factor,tims_age,tims_error,std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.get_standard_fracfctr(std,std_txt,Pb_Th_std_crct_selector,regression_selector,
+                                                                                                                    ellipse_mode_selector,power)
+            
+            if Pb_Th_std_crct_selector == 'Common Pb':
+                df['206Pb/238Uc_age'] = np.log(df['206Pb/238Upbc'] + 1) / lambda_238
+                df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
+                #propagate errors
+                #error on fractionation factor. includes error from ID-TIMS and ICPMS
+                dfrac = np.abs(frac_factor)*((1/tims_age)**2*(tims_error/2)**2 + (1/std_avg)**2*std_avgerr**2)**(1/2)
+                #error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
+                dage = np.abs(df['206Pb/238Uc_age'])*((1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/2/100)**2)**(1/2)
+                #error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
+                dinit = np.abs(common)*((1/df['SK207_204'])**2*(0.3/2)**2 + (1/df['SK206_204'])**2*(1/2)**2)**(1/2)
+                # total propagated error
+                # dagetot = (dage**2 +  df['SE 206/204']**2 + dinit**2)**(1/2)
+                dagetot = np.abs(df['206Pb/238Uc_age'])*((1/tims_age)**2*(tims_error/2)**2 + (1/std_avg)**2*std_avgerr**2 + 
+                                                         (1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/2/100)**2 +
+                                                         (1/df['SK207_204'])**2*(0.3/2)**2 + (1/df['SK206_204'])**2*(1/2)**2)**(1/2)
+                
+                df['∆206/238 age (meas.)'] = dage
+                df['∆206/238 age (tot.)'] = dagetot
+            elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
+                if UTh_std_norm == 'Off':
+                    df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1))
+                    df['206Pb/238Uc_age'] = (np.log(df['206Pb/238UPbThc'] + 1) / lambda_238)
+                    df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
+                    #propagate errors
+                    #error on fractionation factor. includes error from ID-TIMS and ICPMS
+                    dfrac = np.abs(frac_factor)*((1/tims_age)**2*(tims_error/2)**2 + (1/avg_std_age_Thcrct)**2*std_avgerr**2)**(1/2)
+                    #error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
+                    dage = np.abs(df['206Pb/238U_correctedage'])*((1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/2/100)**2)**(1/2)
+                    #error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
+                    dinit = np.abs(common)*((1/df['SK207_204'])**2*(0.3/2)**2 + (1/df['SK206_204'])**2*(1/2)**2)**(1/2)
+                    # UTh errors - only using errors from measured zircon here, as this will by and large be the largest error contribution
+                    # should probably add error for U / Th in icpms glass analyses, though rock measurements will undoubtedly be incorrectly used by users of the
+                    # program (in absence of other data) and so added error would overall be fairly misleading anyway
+                    # errors on absolute concentrations from ID-TIMS are overall negligible and often not reported either. 
+                    # need to put in possibility of putting in errors on Th/U measurements
+                    # total propagated error
+                    # dagetot = (dage**2 +  df['SE 206/204']**2 + dinit**2)**(1/2)
+                    dagetot = np.abs(df['206Pb/238Uc_age'])*((1/tims_age)**2*(tims_error/2)**2 + (1/std_avg)**2*std_avgerr**2 + 
+                                                             (1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/2/100)**2 +
+                                                             (1/df['SK207_204'])**2*(0.3/2)**2 + (1/df['SK206_204'])**2*(1/2)**2)**(1/2)
+                    df['∆206/238 age (meas.)'] = dage
+                    df['∆206/238 age (tot.)'] = dagetot
+                elif UTh_std_norm == 'Calc U/Th from Std.':
+                    I232_std = std['232Th'].mean()
+                    I238_std = std['238U'].mean()
+                    std232err = std['232Th_1SE'].mean()
+                    std238err = std['238U_1SE'].mean()
+                    ThUzrn_calc = (((1/UTh_std)/(1/UTh_std_m))/(I232_std/I238_std)) * (df['232Th']/df['238U'])
+                    df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*((ThUzrn_calc/ThU_magma)-1))
+                    df['206Pb/238Uc_age'] = (np.log(df['206Pb/238UPbThc'] + 1) / lambda_238)
+                    df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
+                    #propagate errors
+                    #error on fractionation factor. includes error from ID-TIMS and ICPMS
+                    dfrac = np.abs(frac_factor)*((1/tims_age)**2*(tims_error/2)**2 + (1/avg_std_age_Thcrct)**2*std_avgerr**2)**(1/2)
+                    #error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
+                    dage = np.abs(df['206Pb/238U_correctedage'])*((1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/2/100)**2)**(1/2)
+                    #error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
+                    dinit = np.abs(common)*((1/df['SK207_204'])**2*(0.3/2)**2 + (1/df['SK206_204'])**2*(1/2)**2)**(1/2)
+                    # UTh errors
+                    dThU = np.abs(ThUzrn_calc) * ((df['232Th_1SE']/df['232Th'])**2 + (df['238U_1SE']/df['238U'])**2 + (std232err/I232_std)**2 + (std238err/I238_std)**2)**(1/2)
+                    # total propagated error
+                    # dagetot = (dage**2 +  df['SE 206/204']**2 + dinit**2 + dThU**2)**(1/2)
+                    dagetot = np.abs(df['206Pb/238Uc_age'])*((1/tims_age)**2*(tims_error/2)**2 + (1/std_avg)**2*std_avgerr**2 + 
+                                                             (1/(1/df['U238_Pb206']))**2*df['206/238 Reg. err']**2 + (0.16/2/100)**2 +
+                                                             (1/df['SK207_204'])**2*(0.3/2)**2 + (1/df['SK206_204'])**2*(1/2)**2 +
+                                                             (df['232Th_1SE']/df['232Th'])**2 + (df['238U_1SE']/df['238U'])**2 + (std232err/I232_std)**2 + (std238err/I238_std)**2)**(1/2)
+                    df['∆206/238 age (meas.)'] = dage
+                    df['∆206/238 age (tot.)'] = dagetot
+            
+            return df
+                
+        elif ellipse_mode_selector == 'Ellipses':
+            # ellipse_params = pd.DataFrame([np.zeros(5)],columns=['206Pb/238U Center','207Pb/206Pb Center','Ell. Width','Ell. Height','Ell. Rotation'])
+            frac_factor,tims_age,tims_error,std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.get_standard_fracfctr(std,std_txt,Pb_Th_std_crct_selector,regression_selector,
+                                                                                                                    ellipse_mode_selector,power)
+        # for i in df.SampleLabel.unique():
+            # conf_ellipse = calc_fncs.get_ellipse(df[df['SampleLabel']==i],power)
+            
+            
+            # ell = Ellipse(conf_ellipse[0],conf_ellipse[1],conf_ellipse[2],conf_ellipse[3],color='darkslategray',alpha=0.3,ec='k')
+            # ax.add_artist(ell)
+            
+            # c2 = (np.mean(x2),np.mean(y2))
+            # wid2 = 2*np.sqrt(scipy.stats.chi2.ppf((1-power),df=2)*eigvals_order2[0])
+            # hgt2 = 2*np.sqrt(scipy.stats.chi2.ppf((1-power),df=2)*eigvals_order2[1])
+            # theta2 = np.degrees(np.arctan2(*eigvecs_order2[:,0][::-1]))
+            # ell2_params = [c2,wid2,hgt2,theta2]
+            
+            points,concordia_238_206,pts_pb_r,n,a = calc_fncs.get_projections(df,ellipse_mode_selector,power)
+            
+            # set up empty arrays to be filled for common lead corrections
+            common_filter = []
+            
+            pb_m = df['207Pb/206Pb'] # measured 207/206
+            common = df['SK207_206']
+            
+            for i in common:
+                if i <= 0:
+                    common_filter.append(0)
+                else:
+                    common_filter.append(i)
+            
+            # calculate fraction of common Pb
+            f_ = (pb_m - pts_pb_r) / (common - pts_pb_r)
+            # set up array to set f = 0 if point lies on or below Concordia (i.e., no common Pb present)
+            f = []
+            
+            for k,j in zip(common_filter,f_):
+                if k <= 0:
+                    f.append(0)
+                elif j < 0:
+                    f.append(0)
+                else:
+                    f.append(j)
+                    
+            df['207Pb/206Pbr'] = pts_pb_r
+            # df['207Pb/206Pbcommon'] = common_filter
+            df['f'] = f
+            
+            df['counts_pb206r'] = df['206Pb'] * (1-df['f'])
+            df['206Pb/238Upbc_numerical'] = 1/df['U238_Pb206']-(1/df['U238_Pb206']*f)
+            df['206Pb/238Upbc'] = 1/concordia_238_206
+        
+            
+            # will need input for which standard to use now! standard will need to be calculated by a separate function and called/input here
+            
+            if Pb_Th_std_crct_selector == 'Common Pb':
+                df['206Pb/238Uc_age'] = np.log(df['206Pb/238Upbc'] + 1) / lambda_238
+                df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
+                
+                df['206Pb/238U Corrected'] = np.exp(df['206Pb/238U_correctedage']*lambda_238) - 1
+                
+                ellparams_i = calc_fncs.get_ellipse(df, power)
+                # ellipse_params = ellipse_params.append(pd.DataFrame([ellparams_i],columns=['Ellipse Center','Ell. Width','Ell. Height','Ell. Rotation']),ignore_index=True)
+                ellparams_i = pd.DataFrame([ellparams_i],columns=['Ellipse Center','Ell. Width','Ell. Height','Ell. Rotation'])
+            
+            elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
+                if UTh_std_norm == 'Off':
+                    df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1))
+                    df['206Pb/238Uc_age'] = (np.log(df['206Pb/238UPbThc'] + 1) / lambda_238)
+                    df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
+                    
+                    df['206Pb/238U Corrected'] = np.exp(df['206Pb/238U_correctedage']*lambda_238) - 1
+                    
+                    ellparams_i = calc_fncs.get_ellipse(df, power)
+                    # ellipse_params = ellipse_params.append(pd.DataFrame([ellparams_i],columns=['Ellipse Center','Ell. Width','Ell. Height','Ell. Rotation']),ignore_index=True)
+                    ellparams_i = pd.DataFrame([ellparams_i],columns=['Ellipse Center','Ell. Width','Ell. Height','Ell. Rotation'])
+                    
+                elif UTh_std_norm == 'Calc U/Th from Std.':
+                    I232_std = std['232Th'].mean()
+                    I238_std = std['238U'].mean()
+                    std232err = std['232Th_1SE'].mean()
+                    std238err = std['238U_1SE'].mean()
+                    ThUzrn_calc = (((1/UTh_std)/(1/UTh_std_m))/(I232_std/I238_std)) * (df['232Th']/df['238U'])
+                    df['206Pb/238UPbThc'] = df['206Pb/238Upbc'] - (lambda_238/lambda_230*((ThUzrn_calc/ThU_magma)-1))
+                    df['206Pb/238Uc_age'] = (np.log(df['206Pb/238UPbThc'] + 1) / lambda_238)
+                    df['206Pb/238U_correctedage'] = df['206Pb/238Uc_age']*frac_factor
+                    
+                    df['206Pb/238U Corrected'] = np.exp(df['206Pb/238U_correctedage']*lambda_238) - 1
+                    
+                    ellparams_i = calc_fncs.get_ellipse(df, power)
+                    ellparams_i = pd.DataFrame([ellparams_i],columns=['Ellipse Center','Ell. Width','Ell. Height','Ell. Rotation'])
+        return ellparams_i
+                
+                
+                    
     
     
     
@@ -446,7 +583,7 @@ class calc_fncs:
         accepted_ages = {
             'Temora':416780000,
             'FishCanyon': 28478000,
-            '94_35': 55500000,
+            '94-35': 55500000,
             'Plesovice': 337100000,
             'R33': 419300000,
             '91500': 1062400000,
@@ -459,7 +596,7 @@ class calc_fncs:
         TIMS_errors = {
             'Temora':330000,
             'FishCanyon': 24000,
-            '94_35': 80000,
+            '94-35': 80000,
             'Plesovice': 200000,
             'R33': 400000,
             '91500': 1900000,
@@ -470,19 +607,18 @@ class calc_fncs:
         }
         
         if Pb_Th_std_crct_selector == 'Common Pb':
-            std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.correct_standard_ages(std,std_txt,regression_selector,ellipse_mode_selector,power)
+            std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.correct_standard_ages(std,std_txt,regression_selector,ellipse_mode_selector,power,Pb_Th_std_crct_selector)
             frac_factor = accepted_ages.get(std_txt)/std_avg
             tims_age = accepted_ages.get(std_txt)
             tims_error = TIMS_errors.get(std_txt)
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
-            std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.correct_standard_ages(std,std_txt,regression_selector,ellipse_mode_selector,power)
+            std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m = calc_fncs.correct_standard_ages(std,std_txt,regression_selector,ellipse_mode_selector,power,Pb_Th_std_crct_selector)
             frac_factor = accepted_ages.get(std_txt)/avg_std_age_Thcrct
             tims_age = accepted_ages.get(std_txt)
             tims_error = TIMS_errors.get(std_txt)
-        else:
-            pass
 
         return frac_factor,tims_age,tims_error,std_avg,avg_std_age_Thcrct,std_avgerr,UTh_std,UTh_std_m
+            
     
 #%%
 class finalize_ages(param.Parameterized):
@@ -494,7 +630,7 @@ class finalize_ages(param.Parameterized):
     file_path_ellipse = param.String(default='Insert Ellipse File Path')
     input_data_ellipse = param.DataFrame(precedence=-1)
     output_data_ellipse = param.DataFrame(precedence=-1)
-    regression_selector = param.Selector(objects=['1st Order','2nd Order'])
+    regression_selector = param.Selector(objects=['1st Order','2nd Order','Exp.'])
     ellipse_mode_selector = param.Selector(default='Point Estimates',objects=['Point Estimates','Ellipses'])
     
     x_axis_TW_min = param.Number(default=0.5)
@@ -506,7 +642,7 @@ class finalize_ages(param.Parameterized):
     common_207204_input = param.Number()
     ThU_zrn_input = param.Number()
     ThU_magma_input = param.Number()
-    UTh_std_norm = param.Selector(default='Off',objects=['Calc U/Th unk. via std.','Off'])
+    UTh_std_norm = param.Selector(default='Off',objects=['Calc U/Th from Std.','Off'])
     Pb_Th_std_crct_selector = param.Selector(objects=['Common Pb','Common Pb + Th Disequil.'])
     power = param.Number(default=0.05)
     
@@ -533,6 +669,7 @@ class finalize_ages(param.Parameterized):
         if self.ellipse_mode_selector == 'Point Estimates':
             if self.file_path != 'Insert File Path':
                 df = pd.read_excel(self.file_path,sheet_name='Sheet1')
+                # df = pd.read_excel(self.file_path,sheet_name='5mJ_7Hz')
                 self.input_data = df
                 self.input_data['Pb207_Pb206'] = self.input_data['207Pb/206Pb']
                 if '206/238 1st Order' in self.input_data.columns and self.regression_selector == '1st Order':
@@ -543,6 +680,10 @@ class finalize_ages(param.Parameterized):
                     self.input_data['U238_Pb206'] = 1/self.input_data['206/238 2nd Order']
                     self.input_data['206/238 Reg. err'] = self.input_data['SE 206/238 2nd Order']
                     self.input_data['206/238U_age_init'] = np.log(self.input_data['206/238 2nd Order'] + 1) / lambda_238
+                elif '206/238 Exp.' in self.input_data.columns and self.regression_selector == 'Exp.':
+                    self.input_data['U238_Pb206'] = 1/self.input_data['206/238 Exp.']
+                    self.input_data['206/238 Reg. err'] = self.input_data['SE 206/238 Exp']
+                    self.input_data['206/238U_age_init'] = np.log(self.input_data['206/238 Exp.'] + 1) / lambda_238
                 else:
                     pass
                 self.output_data = pd.DataFrame([np.zeros(len(self.input_data.columns))],columns=list(self.input_data.columns))
@@ -566,7 +707,7 @@ class finalize_ages(param.Parameterized):
                 self.input_data_ellipse['Pb207_Pb206'] = self.input_data_ellipse['207Pb/206Pb']
                 self.input_data_ellipse['U238_Pb206'] = 1/self.input_data_ellipse['206Pb/238U']
                 self.input_data_ellipse['206/238U_age_init'] = np.log(self.input_data_ellipse['206Pb/238U'] + 1) / lambda_238
-            self.output_data_ellipse = pd.DataFrame([np.zeros(len(self.input_data_ellipse.columns))],columns=list(self.input_data_ellipse.columns))
+            self.output_data_ellipse = pd.DataFrame([np.zeros(4)],columns=['Ellipse Center','Ell. Width','Ell. Height','Ell. Rotation'])
         else:
             pass
     
@@ -578,10 +719,12 @@ class finalize_ages(param.Parameterized):
                     self.input_data['SK206_204'] = self.common_206204_input
                 elif self.common_206204_input == 0:
                     self.input_data['SK206_204'] = 11.152 + 9.74*(np.exp(lambda_238*3.7e9)-np.exp(lambda_238*self.input_data['206/238U_age_init']))
+                    # self.input_data['SK206_204'] = 11.152 + 10*(np.exp(lambda_238*3.7e9)-np.exp(lambda_238*self.input_data['206/238U_age_init']))
                 if self.common_207204_input != 0:
                     self.input_data['SK207_204'] = self.common_207204_input
                 elif self.common_207204_input == 0:
                     self.input_data['SK207_204'] = 12.998 + 9.74/137.82*(np.exp(lambda_235*3.7e9)-np.exp(lambda_235*self.input_data['206/238U_age_init']))
+                    # self.input_data['SK207_204'] = 12.998 + 10/137.82*(np.exp(lambda_235*3.7e9)-np.exp(lambda_235*self.input_data['206/238U_age_init']))
                 self.input_data['SK207_206'] = self.input_data['SK207_204'] / self.input_data['SK206_204']
             elif self.ellipse_mode_selector == 'Ellipses':
                 if self.common_206204_input != 0:
@@ -633,14 +776,25 @@ class finalize_ages(param.Parameterized):
     
     
     def add_output_data(self,event=None):
-        data_to_update = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_sample_selector)]
-        chosen_std = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_standard_selector)]
-        ages = calc_fncs.correct_sample_ages(data_to_update,chosen_std,self.text_standard_selector,self.ThU_zrn_input,self.ThU_magma_input,self.Pb_Th_std_crct_selector,self.regression_selector,
-                                             self.ellipse_mode_selector,self.power,self.UTh_std_norm)
-        if self.output_data is None:
-            self.output_data = ages
-        else:
-            self.output_data = self.output_data.append(ages,ignore_index=True)
+        if self.ellipse_mode_selector == 'Point Estimates':
+            data_to_update = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_sample_selector)]
+            chosen_std = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_standard_selector)]
+            ages = calc_fncs.correct_sample_ages(data_to_update,chosen_std,self.text_standard_selector,self.ThU_zrn_input,self.ThU_magma_input,self.Pb_Th_std_crct_selector,self.regression_selector,
+                                                 self.ellipse_mode_selector,self.power,self.UTh_std_norm)
+            if self.output_data is None:
+                self.output_data = ages
+            else:
+                self.output_data = self.output_data.append(ages,ignore_index=True)
+        elif self.ellipse_mode_selector == 'Ellipses':
+            chosen_std = self.input_data_ellipse[self.input_data_ellipse['SampleLabel'].str.contains(self.text_standard_selector)]
+            data_to_update = self.input_data_ellipse[self.input_data_ellipse['SampleLabel'].str.contains(self.text_sample_selector)]
+            for i in data_to_update.SampleLabel.unique():
+                data = calc_fncs.correct_sample_ages(data_to_update[data_to_update['SampleLabel']==i],chosen_std,self.text_standard_selector,self.ThU_zrn_input,self.ThU_magma_input,self.Pb_Th_std_crct_selector,self.regression_selector,
+                                                     self.ellipse_mode_selector,self.power,self.UTh_std_norm)
+                if self.output_data_ellipse is None:
+                    self.output_data_ellipse = data
+                else:
+                    self.output_data_ellipse = self.output_data_ellipse.append(data,ignore_index=True)
         
     
     @pn.depends('output_data',watch=True)
@@ -654,17 +808,27 @@ class finalize_ages(param.Parameterized):
     
     @pn.depends('output_data')
     def export_data(self,event=None):
-        self.output_data.to_excel('output_lasertramZ_ages.xlsx')
+        if self.ellipse_mode_selector == 'Point Estimates':
+            self.output_data.to_excel('output_lasertramZ_ages.xlsx')
+        elif self.ellipse_mode_selector == 'Ellipses':
+            self.output_data_ellipse.to_excel('output_lasertramZ_ellipses.xlsx')
         
     
     def export_plot(self,event=None):
-        data_toplot = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_sample_selector)]
-        plot = calc_fncs.plot_TW(data_toplot,
-                       self.x_axis_TW_min,self.x_axis_TW_max,
-                       # self.x_axis_TW[0],self.x_axis_TW[1],
-                       self.y_axis_TW[0],self.y_axis_TW[1],
-                       self.label_toggle)
-        plot.savefig('LaserTRAMZ_TW.pdf',format='pdf',dpi=250)
+        if self.ellipse_mode_selector == 'Point Estimates':
+            data_toplot = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_sample_selector)]
+            plot = calc_fncs.plot_TW(data_toplot,
+                           self.x_axis_TW_min,self.x_axis_TW_max,
+                           self.y_axis_TW[0],self.y_axis_TW[1],
+                           self.label_toggle,self.ellipse_mode_selector,self.power)
+            plot.savefig('LaserTRAMZ_TW.pdf',format='pdf',dpi=250)
+        elif self.ellipse_mode_selector == 'Ellipses':
+            data_toplot = self.input_data_ellipse[self.input_data_ellipse['SampleLabel'].str.contains(self.text_sample_selector)]
+            plot = calc_fncs.plot_TW(data_toplot,
+                           self.x_axis_TW_min,self.x_axis_TW_max,
+                           self.y_axis_TW[0],self.y_axis_TW[1],
+                           self.label_toggle,self.ellipse_mode_selector,self.power)
+            plot.savefig('LaserTRAMZ_TW.pdf',format='pdf',dpi=250)
 
 reduce_ages = finalize_ages(name='Reduce Ages')
 
@@ -692,15 +856,3 @@ grid_layout[0,1] = pn.Row(pn.WidgetBox(pn.Param(reduce_ages.param,
 grid_layout[1,1] = pn.Column(reduce_ages.call_boxplot)
 
 grid_layout.show()
-
-
-
-
-
-
-
-
-
-
-
-
