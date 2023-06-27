@@ -1,32 +1,26 @@
-# U-Pb-LA-ICP-MS-Reduction
-## Program for reducing U-Pb data collected by laser ablation. Sister to Lasertram-DB (Lubbers et al., 202x)
+# LaserTRAMZ
+## Citing and Related Documentatio
+#### doi
+#### Publication coming 'soon'!
+## Purpose
+#### This program was written to handle time resolved U-Pb zircon data using LA-ICP-Quadrupole-MS. This is effectively the sister to [LaserTRAM-DB](https://github.com/jlubbersgeo/laserTRAM-DB#readme) ([Lubbers et al., 202x](https://doi.org/10.5281/zenodo.7826697)) which was built for handling trace elements using the same instrumentation. The program was born from a need to measure young zircons on the quadrupole and is thus not built to handle isotopic ratios and trace elements. A variety of reduction techniques are available to reduce isotopic ratios.
+## Data Input Format
+#### Similar to LaserTRAM-DB, the [multifiler](https://github.com/jlubbersgeo/multifiler) repository  make the data prepared for LaserTRAMZ after deleting the 'Timestamp' header that is output in the LT_ready file.
 
-## Main To-Do's:
+## Part One: Analyte Reduction
 
-1. Add File upload button
 
-	* Hopefully do without secondary trigger
-	* Need to get everything else talking to the uploaded file. Currently, some functions depend on data import via pandas
-	* Setup callback in class with Watch=True that send upload to input_data widget possibly
-	
-	*Completed a work around that is much faster than the file upload button. Requires copy+pasting filepath*
-    
-2. Add errors for all ratios, not just 206/238
+## Part Two: Age Reduction
 
-	* Use ratio_buttons widget as input into get_regressions, get_residuals, get_approved_regressions
-	* Will require some string formatting
-	* Need to expand list in get_approved function as well.
-	
-	*Completed 12/2022*
-  
-3. Add option to use 1st or 2nd order regression in second half of program titled 'CommonPbandnorm'
-	*Completed*
-	
-4. Add Box and Whisker plot + option to plot up sample numbers for fliers / discordant data.
-	* Points to be written down by user and inspected manually
-	
-	*Box and Whisker Plot Complete, but needs some reworking aesthetically*
 
-5. In the very far future, try to calibrate 207/235 on the laser very well, then calculate 238 from 235 in order to deal with detector linearity issues for very high U zircons.
-	* Cross check by calculating 207/235 on very old zircons - likely oracle, FC1, 91500, Tan-Bra
-	* May need to add an option in second part of program to get ages from Wetherill Concordia. Tara-Wasserburg not so good for old ages.
+## Installation and Use
+
+
+## Demos
+
+
+## Contributions and Questions
+
+
+## To-Do List
+
