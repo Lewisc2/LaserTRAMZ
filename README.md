@@ -1,5 +1,5 @@
 # LaserTRAMZ
-## Citing and Related Documentatio
+## Citing and Related Documentation
 #### doi
 #### Publication coming 'soon'!
 ## Purpose
