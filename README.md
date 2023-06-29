@@ -42,8 +42,10 @@ ____________
 ## Part One: Analyte Reduction
 #### Running the script for Part One will open a page in your default web browser with a grey column and some default selections. Copy + Paste the file path to your LT_ready file (see above) into the bottom blank string input. After some loading time, an empty data table will pop up and the dropdown titled 'Sample Subset' will be populated with the analyses in the file. Select one of these (it does not auto populate) and four plots as well as some regression statistics will pop up that looks like the following screenshot. Labelled plots correspond to the letters as follows:
 #### A. Ablation intensites, B. Time resolved ratios., C. Confidence Ellipse derived from the eigen vectors of the covariance matrix, D. Regression statistics, E. Residuals for the 206Pb/238U fit, F. Output data table, G. GUI tools
+![Screenshot 2023-06-27 at 3 21 47 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/3a56b040-a7f0-4a20-aad4-aba46f3c16a5)
+
 #### More information is given about each of these below.
-![Screenshot 2023-06-27 at 3 21 47 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/4cf8a84d-87c0-4adb-8129-fcad73683de3)
+
 
 #### A. Analytes can be toggled and put on a log scale using the buttons in the GUI tools. The y axis scale can be changed using hte slider titled 'Ablation plot ylim slider: x'.
 
@@ -63,7 +65,7 @@ ____________
 ## Part Two: Age Reduction
 #### Running the script for Part Two will open up a page in your default web browser. Before inputting a file, select 1) which 206Pb/238U regression you will be using and 2) whether you are getting point estimates (ages) or the entire confidence ellipse.  Copy and Paste the filepath from part one into the appropriate input (File path for point estimates, File path ellipse for confidence ellipses). Again, a datatable will pop up with a column of GUI tools. 
 #### Type in any string into the 'Text sample selector' input to populate Tera-Wasserburg Concordia. Typing a standard name into the 'Text standard selector' input will populate the boxplot. The GUI should now contain: A. Concordia plot, B. Boxplot of sample ages (if using point estimates), C. Data Table, D. GUI Tools. All are discussed in more detail below.
-![Screenshot 2023-06-27 at 3 25 33 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/df0d65f9-74f6-4c84-aa5b-fb006c74c1e4)
+![Screenshot 2023-06-27 at 3 25 33 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/aed2af86-c992-4805-acac-e4e9fcf65795)
 
 
 #### A. Tera-Wasserburg Concordia is shown as the solid black line (Wetherhill option coming soon). The y and x axes limits may be adjusted using hte X axis min/max inputs and y-axis slider. Measured data are plotted as black diamonds and green dots along concordia are the concordant age without the common Pb component. Black lines passing through these points are the projection from common Pb (Stacey and Kramers, 1975) through the measured data point and onto concordia. LaserTRAMZ outputs the concordant age.
