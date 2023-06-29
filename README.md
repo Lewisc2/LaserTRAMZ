@@ -1,6 +1,6 @@
 # LaserTRAMZ
 ## Citing and Related Documentation
-#### doi
+#### [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8097362.svg)](https://doi.org/10.5281/zenodo.8097362)
 #### Publication coming 'soon'!
 
 ## Purpose
