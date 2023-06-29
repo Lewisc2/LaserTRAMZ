@@ -1,0 +1,33 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: LaserTRAMZ
+message: >-
+  A Time Resolved Analysis Module (TRAM) for reducing U-b
+  zircon data from a Quadrupole. If you use the software,
+  for now, please site as below. Once Lewis et al. (in prep)
+  is published, please cite that instead.
+type: software
+authors:
+  - given-names: Chuck
+    family-names: Lewis
+    email: lewisc2@oregonstate.edu
+    affiliation: Oregon State University
+    orcid: 'https://orcid.org/0000-0001-5848-937X'
+  - given-names: Adam
+    family-names: Kent
+    affiliation: Oregon State University
+    orcid: 'https://orcid.org/0000-0003-3564-6285'
+  - given-names: Chris
+    family-names: Russo
+    affiliation: Oregon State University
+  - given-names: Jordan
+    family-names: Lubbers
+    affiliation: United States Geological Survey
+    orcid: 'https://orcid.org/0000-0002-3566-5091'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.8097362
+repository-code: 'https://github.com/Lewisc2/LaserTRAMZ'
+license: MIT
