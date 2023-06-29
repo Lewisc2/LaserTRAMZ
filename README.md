@@ -29,17 +29,25 @@ Primary and validation standards have a required input format in order to get th
 | Oracle            | Bowring, unpublished      | Oracle              |
 | Tan-BrA           | Pecha, unpublished        | Tan-Bra             |
 | OG-1              | Stern et al., 2009        | OG1                 |
-The output excel file from part one will have a column that needs to be deleted (column A) and a row that needs to be deleted (Row 2). Once this is done the file can be uploaded into Part Two and should look like:
 
+The output excel file from part one will have a column that needs to be deleted (column A) and a row that needs to be deleted (Row 2). Once this is done the file can be uploaded into Part Two and should look like:
 | SampleLabel | t start | t end | ... | SE% 238/235 |
 | ----------- | ------- | ------| --- | ----------- |
 | FishCanyon  | 32      | 60    | ... | 1.04        |
 | FishCanyon  | 32      | 57    | ... | 0.85        |
 | ...         | ...     | ...   | ... | ...         |
 
-
 ## Part One: Analyte Reduction
-Running the script for Part One will open a page in your default web browser
+Running the script for Part One will open a page in your default web browser with a grey column and some default selections. Copy + Paste the file path to your LT_ready file (see above) into the bottom blank string input. After some loading time, an empty data table will pop up and the dropdown titled 'Sample Subset' will be populated with the analyses in the file. Select one of these (it does not auto populate) and four plots as well as some regression statistics will pop up that looks like the following screenshot. Labelled plots correspond to the letters as follows:
+A. Ablation intensites, B. Time resolved ratios., C. Confidence Ellipse derived from the eigen vectors of the covariance matrix, D. Regression statistics, E. Residuals for the 206Pb/238U fit, F. Output data table, G. GUI tools
+More information is given about each of these below.
+![Screenshot 2023-06-27 at 3 21 47 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/4cf8a84d-87c0-4adb-8129-fcad73683de3)
+
+A. Analytes can be toggled and put on a log scale using the buttons in the GUI tools. The y axis scale can be changed using hte slider titled 'Ablation plot ylim slider: x'.
+B. Time resolved ratios can be toggled using the buttons in the GUI tools. Background interval is chosen with the 'Background slider:'. Background begins at the lower number and ends at the higher number, and both are viewed as dashed vertical black lines on the ablation intensity plot (A) and the ratio plot.
+
+
+
 
 ## Part Two: Age Reduction
 
@@ -58,3 +66,4 @@ Feecback and suggestions may be made by opening an [issue](https://github.com/Le
 * Auto Session wide Drift Correction
 * Demo Videos
 * Get this GD paper published
+* 207/235 Regression
