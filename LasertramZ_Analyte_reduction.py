@@ -423,7 +423,7 @@ class calc_fncs:
     def get_approved(data,bckgrnd_start_input,bckgrnd_stop_input,
                      ablation_start_input,ablation_stop_input,ablation_start_true,
                     regression_buttons,ellipsemode_selector,force_exp_params,joggle_params,aguess,bguess,cguess,
-                    counts_mode,arrayofdwelltimes):
+                    counts_mode,arrayofdwelltimes,sample_names):
         """
 
         Parameters
@@ -529,7 +529,7 @@ class calc_fncs:
         data_toapprove = pd.DataFrame([data_toapprove.iloc[:,2:-1].mean()]) # put means of isotopic values in a dataframe
         
         # 202Hg: 29.86%, 204Hg: 6.87% https://www.nndc.bnl.gov/nudat3/
-        Hgratio = 6.87/100 / 29.86/100
+        Hgratio = (6.87/100) / (29.86/100)
         
         if ellipsemode_selector is True:
             for i,k in zip(ellipse_data_toapprove.loc[:,list(analyte_cols)],lod):
@@ -581,10 +581,11 @@ class calc_fncs:
         else:
             data_toapprove['204Hg'] = 'bdl'
         
-        data_toapprove.insert(0,'SampleLabel',data.iloc[0,0]) # reinsert the sample label into the calculation df
-        data_toapprove.insert(1,'t start',[ablation_start_input]) # insert ablation start time into df
-        data_toapprove.insert(2,'t end',[ablation_stop_input]) # insert ablation stop time into df
-        data_toapprove.insert(3,'t project',[ablation_start_true]) # insert projected regression start time into df
+        data_toapprove.insert(0,'measurementindex',sample_names.index(data.iloc[0,0]))
+        data_toapprove.insert(1,'SampleLabel',data.iloc[0,0]) # reinsert the sample label into the calculation df
+        data_toapprove.insert(2,'t start',[ablation_start_input]) # insert ablation start time into df
+        data_toapprove.insert(3,'t end',[ablation_stop_input]) # insert ablation stop time into df
+        data_toapprove.insert(4,'t project',[ablation_start_true]) # insert projected regression start time into df
         # stitch the individual isotopic measurements, their errors, ratios, ratio errors, and regression results / regression statistics into a df together.
         # these are then appeneded into the output df
         data_approved = data_toapprove.join([data_toapprove_SE,data_ratios,data_stats])
@@ -934,9 +935,10 @@ class make_plots(param.Parameterized):
             options = list(self.input_data.SampleLabel.unique())
             self.param.sample_subset.objects = options
             self.output_data = pd.DataFrame([np.zeros(len(self.input_data.columns))],columns=list(self.input_data.columns))
-            self.output_data.insert(1,'t start',0)
-            self.output_data.insert(2,'t end',0)
-            self.output_data.insert(3,'t project',0)
+            self.output_data.insert(0,'measurementindex',0)
+            self.output_data.insert(2,'t start',0)
+            self.output_data.insert(3,'t end',0)
+            self.output_data.insert(4,'t project',0)
             self.output_data.drop('Time',axis=1)
             # self.output_data.iloc[0,1:3] = pd.DataFrame(np.zeros(3),columns=['t start','t end','t project'])
             if self.ellipsemode_selector is True:
@@ -1042,7 +1044,7 @@ class make_plots(param.Parameterized):
         data_tosend = self.input_data[self.input_data['SampleLabel'] == self.sample_subset]
         data_approved,ellipse_datapproved = calc_fncs.get_approved(data_tosend,self.background_slider[0],self.background_slider[1],self.ablation_slider[0],self.ablation_slider[1],
                                      self.ablation_start_true,self.regression_buttons,self.ellipsemode_selector,self.force_exp_params,self.joggle_params,self.aguess,self.bguess,self.cguess,
-                                     self.counts_mode,self.arrayofdwelltimes)
+                                     self.counts_mode,self.arrayofdwelltimes,self.param.sample_subset.objects)
         if self.output_data is None:
             self.output_data = data_approved
         else:
