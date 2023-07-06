@@ -18,7 +18,7 @@ ____________
 
 **Part Two**
 ____________
-#### Primary and validation standards have a required input format in order to get the proper age reduction. Adding standards can be done with ease (see contact information below). Currently, standards are from the PlasmAge Consortium:
+#### Primary and validation standards have a required input format in order to get the proper age reduction. Adding standards can be done with ease (see contact information below). Currently, standards are from the PlasmAge Consortium except for NIST which is used for a Pb-Pb mass bias correction and session-wide drift correction (see below):
 | Standard          | Reference                 | Input Name Required |
 | ----------------- | ------------------------- | ------------------- |
 | Fish Canyon Tuff  | Schmitz and Bowring, 2001 | FishCanyon          |
@@ -31,6 +31,7 @@ ____________
 | Oracle            | Bowring, unpublished      | Oracle              |
 | Tan-BrA           | Pecha, unpublished        | Tan-Bra             |
 | OG-1              | Stern et al., 2009        | OG1                 |
+| NIST-614          | Woodhead and Hergt, 2007  | NIST614             |
 
 #### The output excel file from part one, which is output into the folder where the script is, will have a column that needs to be deleted (column A) and a row that needs to be deleted (Row 2). Once this is done the file can be uploaded into Part Two and should look like:
 | SampleLabel | t start | t end | ... | SE% 238/235 |
@@ -64,8 +65,9 @@ ____________
 #### G. Gui tools. Clicking the Approval Interval button will record the analysis. Clicking Export All Plots will export all plots currently displayed. Clicking DDDT! will output the datafile.
 ## Part Two: Age Reduction
 #### Running the script for Part Two will open up a page in your default web browser. Before inputting a file, select 1) which 206Pb/238U regression you will be using and 2) whether you are getting point estimates (ages) or the entire confidence ellipse.  Copy and Paste the filepath from part one into the appropriate input (File path for point estimates, File path ellipse for confidence ellipses). Again, a datatable will pop up with a column of GUI tools. 
-#### Type in any string into the 'Text sample selector' input to populate Tera-Wasserburg Concordia. Typing a standard name into the 'Text standard selector' input will populate the boxplot. The GUI should now contain: A. Concordia plot, B. Boxplot of sample ages (if using point estimates), C. Data Table, D. GUI Tools. All are discussed in more detail below.
-![Screenshot 2023-06-27 at 3 25 33 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/aed2af86-c992-4805-acac-e4e9fcf65795)
+#### Type in any string into the 'Text sample selector' input to populate Tera-Wasserburg Concordia. Typing a standard name into the 'Text standard selector' input will populate the boxplot. The GUI should now contain: A. Concordia plot, B. Boxplot of sample ages (if using point estimates), C. Data Table, D. GUI Tools., E. Drift Correction. All are discussed in more detail below.
+![Screenshot 2023-07-06 at 4 34 29 PM](https://github.com/Lewisc2/LaserTRAMZ/assets/65908927/b0009092-fd8f-4ada-8c69-7b6f1a5ee3b2)
+
 
 
 #### A. Tera-Wasserburg Concordia is shown as the solid black line (Wetherhill option coming soon). The y and x axes limits may be adjusted using hte X axis min/max inputs and y-axis slider. Measured data are plotted as black diamonds and green dots along concordia are the concordant age without the common Pb component. Black lines passing through these points are the projection from common Pb (Stacey and Kramers, 1975) through the measured data point and onto concordia. LaserTRAMZ outputs the concordant age.
@@ -77,6 +79,9 @@ ____________
 #### C. Output data table.
 
 #### D. GUI tools. Click approve data to reduce the current set of samples. Save Plot button will output the currently displayed plots. DDDT! will output the dataframe.
+
+#### E. Drift Correction. Our practice is generally to use NIST-614 in order to monitor session wide drift, as this allows simple and highly reproducible drift corrections rather than monitoring drift in natural standards that frequently have documented heterogeneity. Drift corrections are only made for those analytes and ratios that have a statistically significant slope and f-test for the linear regression. Drift correction is carried out by shifting all values for a given analyte based on the slope of the regression. If the drift is significant, both measured and observed values will be visible in the drift correction plot. Type in NIST614 (see input format section above) into the appropriate string input in order to correct for drift. Note you may use any given standard, however.
+#### We also use NIST614 to correct for Pb-Pb isotope mass bias on 206/204 and 207/206. Select the depressable button in the GUI tools to correct for mass bias using NIST614. Corrected values will be in the output data.
 
 ## Final Output Information
 * t start, t end, t project: The ablation start, end, and projected value.
@@ -123,7 +128,8 @@ Feecback and suggestions may be made by opening an [issue](https://github.com/Le
 
 ## To-Do List
 * Wetherhill Concordia
-* Auto Session wide Drift Correction
+* ~~Auto Session wide Drift Correction~~
+* ~~Pb-Pb Mass Bias Correction (NIST614)~~
 * Demo Videos
 * Get this GD paper published
 * 207/235 Regression
