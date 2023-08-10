@@ -102,23 +102,30 @@ ____________
 * ∆206/238 age (meas.): (mostly) just the analytical error on the age (only assumes 206/238 error and the decay constant error) *do not use this error when reporting ages* 
 * ∆206/238 age (tot.): Fully propagated error. See Lewis et al. (in prep)
 ## Installation and Use
-#### We recommend running the program through [Anaconda](https://www.anaconda.com/download). You may also need to download [Git](https://github.com/git-guides/install-git).  After downloading, one may clone the repository by opening their terminal or Anconda prompt and running the following lines (one by one):
+#### We recommend running the program through [Anaconda](https://www.anaconda.com/download). You may also need to download [Git](https://github.com/git-guides/install-git).  After downloading, one may clone the repository by opening their terminal or Anconda prompt and running the following lines (one by one). It is best to create a virtual environment, which is included in the code block below:
 ```
 git clone https://github.com/Lewisc2/LaserTRAMZ.git
 cd /path/to/LaserTRAMZ
+conda create -n LaserTRAMZ python==3.9.17
 pip install -r localrequirements.txt
 ```
-#### where /path/to/LaserTRAMZ is the file path to the cloned repository. Once this is complete, the program can be run by opening Spyder from the Anaconda navigator and running the scripts, or,
+#### where /path/to/LaserTRAMZ is the file path to the cloned repository. You will need to accept the install by typing y then pressing enter when prompted. Once this is complete, the program can be run by opening Spyder from the Anaconda navigator and running the scripts, or,
 ```
 cd /path/to/LaserTRAMZ
+conda activate LaserTRAMZ
 python LaserTRAMZ_Analyte_Redcution.py
 ```
 #### for part one and 
 ```
 cd /path/to/LaserTRAMZ
+conda activate LaserTRAMZ
 python LaserTRAMZ_Concordia.py
 ```
 #### for part two
+#### To shut down the virtual environemnt, run the following
+```
+conda deactivate LaserTRAMZ
+```
 
 ## Demos
 * Coming soon!
