@@ -134,12 +134,14 @@ conda deactivate LaserTRAMZ
 Feecback and suggestions may be made by opening an [issue](https://github.com/Lewisc2/LaserTRAMZ/issues) or emailing Chuck Lewis (<lewisc2@oregonstate.edu>). I'm happy to answer any questions that may come up.
 
 ## To-Do List
-* Wetherhill Concordia
+* ~~Wetherhill Concordia~~
 * ~~Auto Session wide Drift Correction~~
 * ~~Pb-Pb Mass Bias Correction (NIST614)~~
+* Fit Pb loss dates on Wetherhill
+* Eruption age estimates
 * Demo Videos
 * Get this GD paper published
-* 207/235 Regression
+* ~~207/235 Regression~~
 * Weighted Regressions
 
 ## References
