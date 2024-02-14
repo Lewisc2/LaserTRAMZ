@@ -1,4 +1,6 @@
 # LaserTRAMZ
+## PROGRAM UNDER CONSTRUCTION
+### Old files on another branch. New files are fully functional and run faster than old program. More features in terms of plot navigation and data reduction were also added. Keep an eye out here for more concise updates.
 ## Citing and Related Documentation
 #### See citation.cff file for citing information. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8097362.svg)](https://doi.org/10.5281/zenodo.8097362)
 #### Publication coming 'soon'!
