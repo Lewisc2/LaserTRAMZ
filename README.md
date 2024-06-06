@@ -108,7 +108,7 @@ ____________
 ```
 git clone https://github.com/Lewisc2/LaserTRAMZ.git
 cd /path/to/LaserTRAMZ
-conda create -n LaserTRAMZ python==3.9.17
+conda create -n LaserTRAMZ python==3.9.18
 pip install -r localrequirements.txt
 ```
 #### where /path/to/LaserTRAMZ is the file path to the cloned repository. You will need to accept the install by typing y then pressing enter when prompted. Once this is complete, the program can be run by opening Spyder from the Anaconda navigator and running the scripts, or,
