@@ -32,7 +32,7 @@ from scipy import stats
 from scipy.optimize import curve_fit
 from itertools import cycle
 
-color_palette = bokeh.palettes.Muted9
+color_palette = bokeh.palettes.Accent8
 color_palette_regressions = bokeh.palettes.Dark2_3
 hv.extension('bokeh')
 
