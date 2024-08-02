@@ -29,7 +29,7 @@ import matplotlib as mpl
 mpl.use('agg')
 from matplotlib.figure import Figure
 
-color_palette = bokeh.palettes.Muted9
+color_palette = bokeh.palettes.Accent8
 color_palette_regressions = bokeh.palettes.Dark2_3
 hv.extension('bokeh')
 
