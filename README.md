@@ -108,7 +108,7 @@ ____________
 ```
 git clone https://github.com/Lewisc2/LaserTRAMZ.git
 cd /path/to/LaserTRAMZ
-conda create -n LaserTRAMZ python==3.9.18
+conda create -n LaserTRAMZ python==3.9.17
 conda activate LaserTRAMZ
 pip install -r localrequirements.txt
 ```
