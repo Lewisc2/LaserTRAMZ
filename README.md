@@ -131,7 +131,7 @@ conda deactivate LaserTRAMZ
 ```
 
 ## Demos
-* Coming soon!
+(https://www.youtube.com/watch?v=683U5F1hsdM&list=PLs1w2r4kCIlWRb5ARSq0PzIfl4XBUQuaG)
 
 ## Feedback and Questions
 Feecback and suggestions may be made by opening an [issue](https://github.com/Lewisc2/LaserTRAMZ/issues) or emailing Chuck Lewis (<lewisc2@oregonstate.edu>). I'm happy to answer any questions that may come up.
