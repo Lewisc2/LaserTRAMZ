@@ -347,7 +347,7 @@ class calc_fncs:
         """
         if ellipse_mode_selector == 'Point Estimates':
             # plt.style.use('seaborn-colorblind')
-            fig = Figure(figsize=(1, 3))
+            fig = Figure(figsize=(3, 6))
             ax = fig.add_subplot()
 
             bp = ax.boxplot(ages, patch_artist=True, boxprops=dict(facecolor='slategray', color='k'),
@@ -489,19 +489,43 @@ class calc_fncs:
         avg_std_ratio_Thcrct = df['206Pb/238UPbThc'].mean()
         avg_std_ratio_207 = df['207Pb/235Upbc'].mean()
 
-        wts = []
-        wts207 = []
-        if ellipse_mode_selector == 'Point Estimates':
-            for i in range(0, len(df)):
-                wt_se_i = 1/df['206/238 Reg. err'][i]
-                wts.append(wt_se_i)
-                wt_se_i_207 = 1/df['207/235 Reg. err'][i]
-                wts207.append(wt_se_i_207)
-        else:
-            pass
-
-        avg_reg_err = 1/np.sum(wts)
-        avg_reg_err_207 = 1/np.sum(wts207)
+        # wts = []
+        # wts207 = []
+        # xbarwtd_num = []
+        # xbarwtd_num_207 = []
+        # vwtd_num = []
+        # vwtd_num_207 = []
+        # if ellipse_mode_selector == 'Point Estimates':
+        #     for i in range(0, len(df)):
+        #         wt_se_i = 1/df['206/238 Reg. err'][i]
+        #         xi = df['206Pb/238UPbTh_age'][i]
+        #         xi2 = df['206Pb/238UPbTh_age'][i]**2
+        #         xbarwtd_num_i = wt_se_i*xi
+        #         vwtd_num_i = wt_se_i*xi2
+        #         wts.append(wt_se_i)
+        #         xbarwtd_num.append(xbarwtd_num_i)
+        #         vwtd_num.append(vwtd_num_i)
+                
+        #         wt_se_i_207 = 1/df['207/235 Reg. err'][i]
+        #         xi_207 = df['207Pb/235Uc_age'][i]
+        #         xi2_207 = df['207Pb/235Uc_age'][i]**2
+        #         xbarwtd_num_i_207 = wt_se_i_207*xi_207
+        #         vwtd_num_i_207 = wt_se_i_207*xi2_207
+        #         wts207.append(wt_se_i_207)
+        #         xbarwtd_num_207.append(xbarwtd_num_i_207)
+        #         vwtd_num_207.append(vwtd_num_i_207)
+                
+        #     wtdmean = np.sum(xbarwtd_num)/np.sum(wts)
+        #     wtdmean207 = np.sum(xbarwtd_num_207)/np.sum(wts207)
+        #     avg_reg_err = (np.sum(vwtd_num)/np.sum(wts) - (wtdmean)**2)*(len(df)/(len(df)-1))
+        #     avg_reg_err_207 = (np.sum(vwtd_num_207)/np.sum(wts207) - (wtdmean207)**2)*(len(df)/(len(df)-1))
+        # else:
+        #     avg_reg_err = np.mean(df['206/238 Reg. err'])
+        #     avg_reg_err_207 = np.mean(df['207/235 Reg. err'])
+        avg_reg_err = np.mean(df['206/238 Reg. err'])
+        avg_reg_err_207 = np.mean(df['207/235 Reg. err'])
+        # avg_reg_err = 1/np.sum(wts)
+        # avg_reg_err_207 = 1/np.sum(wts207)
 
         return avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m
 

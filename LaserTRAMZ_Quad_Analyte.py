@@ -955,7 +955,6 @@ class make_plots(param.Parameterized):
             self.output_data.insert(3,'t end',0)
             self.output_data.insert(4,'t project',0)
             self.output_data.drop('Time',axis=1)
-            # self.output_data.iloc[0,1:3] = pd.DataFrame(np.zeros(3),columns=['t start','t end','t project'])
             if self.ellipsemode_selector is True:
                 self.output_data_ellipse = pd.DataFrame([np.zeros(len(self.input_data.columns))],columns=list(self.input_data.columns))
                 self.output_data_ellipse.insert(0,'measurementindex',0)
