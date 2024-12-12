@@ -413,8 +413,8 @@ class calc_fncs:
             sigmaexp_207 = np.sqrt(sum_sq_resid_207/(len(data['207Pb/235U'])-2)) # denominator = d.f. = n-#params
             SE_b0exp = sigmaexp*np.sqrt(1/len(data['206Pb/238U'])+(np.mean(data['Time_s']))**2/((len(data)-1)*np.var(data['Time_s'],ddof=2)))
             SE_b0exp_207 = sigmaexp_207*np.sqrt(1/len(data['207Pb/235U'])+(np.mean(data['Time_s']))**2/((len(data)-1)*np.var(data['Time_s'],ddof=2)))
-            SE_b0exp_percent = SE_b0exp/predicted_b0exp
-            SE_b0exp_percent_207 = SE_b0exp_207/predicted_b0exp_207
+            SE_b0exp_percent = SE_b0exp/predicted_b0exp*100
+            SE_b0exp_percent_207 = SE_b0exp_207/predicted_b0exp_207*100
             residexp = resid
             residexp_207 = resid_207
             tss = ((data['206Pb/238U'] - np.mean(data['206Pb/238U']))**2).sum()
