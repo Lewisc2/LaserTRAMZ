@@ -1,6 +1,5 @@
 # LaserTRAMZ
-## PROGRAM UNDER CONSTRUCTION
-Old files on another branch. New files are fully functional and run faster than old program. More features in terms of plot navigation and data reduction were also added. Keep an eye out here for more concise updates.
+## CAUTION: README is not current and will be updated within the next week or so. Until then you may contact me with questions
 
 ## Purpose
 LaserTRAMZ was written to handle time resolved U-Pb zircon analyses from LA-ICP-Quadrupole-MS and to provide a free, non-automated open-source program, with special interest given to 'young' (≤10Ma Zircons). This is effectively the sister to [LaserTRAM-DB](https://github.com/jlubbersgeo/laserTRAM-DB#readme) ([Lubbers et al., 202x](https://doi.org/10.5281/zenodo.7826697)) which was built for handling trace elements using the same instrumentation. The program was born from a need to measure young zircons on the quadrupole and is built to handle isotopic ratios for the analyst that wants to count as long as possible during analysis (i.e., no trace elements). A variety of reduction techniques are available to reduce isotopic ratios, as described below.
