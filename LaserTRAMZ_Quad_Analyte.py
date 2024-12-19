@@ -34,6 +34,8 @@ import matplotlib as mpl
 mpl.use('agg')
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 color_palette = bokeh.palettes.Accent8
 color_palette_regressions = bokeh.palettes.Dark2_3
