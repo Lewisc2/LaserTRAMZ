@@ -114,7 +114,7 @@ TIMS_errors = {
 
 
 # set up a map that maps variables to a dropdown of labels that are easier to read and understand
-drift_variable_map = {'206Pb/238U Age': ['206Pb/238U Age','206Ob/238U_age_init'],'207Pb/235U Age': ['207Pb/235U Age','207Pb/235U_age_init'],
+drift_variable_map = {'206Pb/238U Age': ['206Pb/238U Age','206Pb/238U_age_init'],'207Pb/235U Age': ['207Pb/235U Age','207Pb/235U_age_init'],
                       '206Pb/238U': ['206Pb/238U c','206Pb/238U_unc'],'207Pb/235U': ['207Pb/235U_corrected','207Pb/235U'],'238U/235U': ['238U/235U c','238U/235U'],
                       '207Pb/206Pb: By Measured Mass Bias': ['207Pb/206Pb c','207Pb/206Pb'],
                       '207Pb/206Pb: By Age': ['207Pb/206Pbr','207Pb/206Pb']
