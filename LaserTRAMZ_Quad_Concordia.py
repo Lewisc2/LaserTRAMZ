@@ -1891,7 +1891,7 @@ class finalize_ages(param.Parameterized):
         cols_to_drop = ['Sample','Sample Analysis Number','238U/206Pb','206Pb/238U_unc','206Pb/238U Reg. err','207Pb/235U','207Pb/235U Reg. err','206Pb/238U_age_init',
                         '207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb','SK 207Pb/206Pb','frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std',
                         'tims_age_207','tims_error_std_207','avg_std_ratio','avg_std_ratio_Thcrct','avg_std_ratio_207','avg_reg_err','avg_reg_err_207','238U/206Pb_corrected',
-                        '207Pb/235U_corrected','207Pb/206Pbr','f','counts_pb206r','206Pb/238Upbc_numerical']
+                        '207Pb/235U_corrected','207Pb/206Pbr','f','counts_pb206r','206Pb/238Upbc_numerical','238U/206Pb err','Epsilon 207Pb/206Pb','Epsilon 206Pb/238U']
         output_df = self.output_data
         output_df = output_df.drop(columns=cols_to_drop)
         output_df = output_df.drop(0,axis=0)
