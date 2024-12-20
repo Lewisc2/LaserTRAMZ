@@ -1095,20 +1095,11 @@ class make_plots(param.Parameterized):
         self.output_data = self.output_data.drop(columns=['Time','Time_s'])
         self.output_data = self.output_data.drop(0,axis=0)
         self.output_data.to_excel('output_lasertramZ.xlsx',startcol=-1)
-        if self.ellipsemode_selector is True and self.output_data_ellipse is not None:
-            self.output_data_ellipse.to_excel('output_CEllipse_lasertramZ.xlsx')
-        else:
-            pass
         
 
 callapp = make_plots(name='Reduce Ablation Data')
 
 pn.extension('tabulator','mathjax')
-
-# buttons_=pn.WidgetBox(pn.Param(callapp.param.accept_array_button,
-#                                widgets={'accept_array_button': pn.widgets.Button(name='Accept Detector Array',button_type='success')}))
-# buttons_sample=pn.WidgetBox(pn.Param(callapp.param.accept_samplename_button,
-#                                widgets={'accept_samplename_button': pn.widgets.Button(name='Accept Sample Name',button_type='success')}))
 
 widgets = {'ratio_buttons': pn.widgets.CheckBoxGroup,
             'regression_buttons': pn.widgets.CheckBoxGroup,
@@ -1124,7 +1115,6 @@ fastgrid_layout = pn.template.VanillaTemplate(title='LaserTRAMZ: LA-ICP-Q-MS',
 
 
 fastgrid_layout.main.append(pn.Column(pn.Row(callapp.call_ratio_plot,callapp.call_residuals_plot))) # for vanilla
-# fastgrid_layout.main.append(pn.Column(hv.DynamicMap(callapp.call_ratio_plot),callapp.call_residuals_plot)) # for vanilla
 fastgrid_layout.main.append(pn.Row(callapp.get_regression_stats))
 fastgrid_layout.main.append(pn.Column(callapp.call_ablation_plot)) # for vanilla
 fastgrid_layout.main.append(pn.Column(pn.Row(callapp.call_ellipse_plot))) # for vanilla
