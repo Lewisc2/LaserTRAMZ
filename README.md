@@ -133,7 +133,7 @@ where /path/to/LaserTRAMZ is the file path to the cloned repository. You will ne
 ```
 cd /path/to/LaserTRAMZ
 conda activate LaserTRAMZ
-python LaserTRAMZ_Analyte_Redcution.py
+python LaserTRAMZ_Quad_Analyte.py
 ```
 
 for part one and 
@@ -141,7 +141,7 @@ for part one and
 ```
 cd /path/to/LaserTRAMZ
 conda activate LaserTRAMZ
-python LaserTRAMZ_Concordia.py
+python LaserTRAMZ_Quad_Concordia.py
 ```
 for part two.
 
