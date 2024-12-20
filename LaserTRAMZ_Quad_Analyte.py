@@ -1094,7 +1094,7 @@ class make_plots(param.Parameterized):
     def export_data(self,event=None):
         self.output_data = self.output_data.drop(columns=['Time','Time_s'])
         self.output_data = self.output_data.drop(0,axis=0)
-        self.output_data.to_excel('output_lasertramZ.xlsx',startcol=-1)
+        self.output_data.to_excel('output_lasertramZ.xlsx',index=False)
         
 
 callapp = make_plots(name='Reduce Ablation Data')
