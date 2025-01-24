@@ -891,7 +891,7 @@ class calc_fncs:
                             if calc_RM_ratio_errors == 'Secondary Age':
                                 epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(nearest_secondary_stds, regression_selector, calc_RM_ratio_errors)
                                 if epi > 0.001:
-                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epi
+                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epi*100
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epi*df.loc[i,'206Pb/238U Reg. err']
                                 else:
                                     pass
@@ -900,7 +900,7 @@ class calc_fncs:
                             elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                                 epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(nearest_secondary_stds, regression_selector, calc_RM_ratio_errors)
                                 if epipb207pb206 > 0.001:
-                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206
+                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
                                 else:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
@@ -912,7 +912,7 @@ class calc_fncs:
                             elif calc_RM_ratio_errors == 'Primary Raw Ratios':
                                 epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(std, regression_selector, calc_RM_ratio_errors)
                                 if epipb207pb206 > 0.001:
-                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206
+                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
                                 else:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
@@ -945,7 +945,7 @@ class calc_fncs:
                     if calc_RM_ratio_errors == 'Secondary Age':
                         epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(df_secondary, regression_selector, calc_RM_ratio_errors)
                         if epi > 0.001:
-                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epi
+                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epi*100
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epi*df['206Pb/238U Reg. err']
                         else:
                             pass
@@ -954,7 +954,7 @@ class calc_fncs:
                     elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                         epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(df_secondary, regression_selector, calc_RM_ratio_errors)
                         if epipb207pb206 > 0.001:
-                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epipb207pb206
+                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epipb207pb206*100
                         else:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
@@ -966,7 +966,7 @@ class calc_fncs:
                     elif calc_RM_ratio_errors == 'Primary Raw Ratios':
                         epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(std, regression_selector, calc_RM_ratio_errors)
                         if epipb207pb206 > 0.001:
-                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epipb207pb206
+                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epipb207pb206*100
                         else:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
@@ -1283,7 +1283,7 @@ class calc_fncs:
             
             while mswd_new > 1.0000:
                 df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + added_error_percent*df['206Pb/238U Reg. err']
-                df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + added_error_percent
+                df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + added_error_percent*100
                 df['206Pb/238U Age 1s (meas) iterate'] = df['206Pb/238U Age'] * ((df['206Pb/238U Reg. err']/df['206Pb/238U_unc'])**2 + (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
                                                                                                                                                                
                 mswd_new = calc_fncs.mswd(df,'206Pb/238U Age','206Pb/238U Age 1s (meas) iterate')
@@ -1667,7 +1667,7 @@ class finalize_ages(param.Parameterized):
                             chosen_secondary_data.loc[i,'Epsilon 207Pb/206Pb'] = epi
                             chosen_secondary_data.loc[i,'Epsilon 206Pb/238U'] = epi
                             if epi > 0.001:
-                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] + epi
+                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] + epi*100
                                 chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] + epi*chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
                             else:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
@@ -1681,7 +1681,7 @@ class finalize_ages(param.Parameterized):
                             chosen_secondary_data.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
                             chosen_secondary_data.loc[i,'Epsilon 206Pb/238U'] = epipb206u238
                             if epipb207pb206 > 0.001:
-                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206
+                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
                             else:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
                             if epipb206u238 > 0.001:
@@ -1697,7 +1697,7 @@ class finalize_ages(param.Parameterized):
                             chosen_std.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
                             chosen_std.loc[i,'Epsilon 206Pb/238U'] = epipb206u238
                             if epipb207pb206 > 0.001:
-                                chosen_std.loc[i,'SE% 207Pb/206Pb epi'] = chosen_std.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206
+                                chosen_std.loc[i,'SE% 207Pb/206Pb epi'] = chosen_std.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
                             else:
                                 chosen_std.loc[i,'SE% 207Pb/206Pb epi'] = chosen_std.loc[i,'SE% 207Pb/206Pb']
                             if epipb206u238 > 0.001:
@@ -1716,7 +1716,7 @@ class finalize_ages(param.Parameterized):
                     chosen_secondary_data['Epsilon 207Pb/206Pb'] = epi
                     chosen_secondary_data['Epsilon 206Pb/238U'] = epi
                     if epi > 0.001:
-                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb'] + epi
+                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb'] + epi*100
                         chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err'] + epi*chosen_secondary_data['206Pb/238U Reg. err']
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
@@ -1732,7 +1732,7 @@ class finalize_ages(param.Parameterized):
                     chosen_secondary_data['Epsilon 206Pb/238U'] = epipb206u238
                     chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
                     if epipb207pb206 > 0.001:
-                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb'] + epipb207pb206
+                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb'] + epipb207pb206*100
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
                     if epipb206u238 > 0.001:
@@ -1749,7 +1749,7 @@ class finalize_ages(param.Parameterized):
                     chosen_std['Epsilon 207Pb/206Pb'] = epipb207pb206
                     chosen_std['Epsilon 206Pb/238U'] = epipb206u238
                     if epipb207pb206 > 0.001:
-                        chosen_std['SE% 207Pb/206Pb epi'] = chosen_std['SE% 207Pb/206Pb'] + epipb207pb206
+                        chosen_std['SE% 207Pb/206Pb epi'] = chosen_std['SE% 207Pb/206Pb'] + epipb207pb206*100
                     else:
                         chosen_std['SE% 207Pb/206Pb epi'] = chosen_std['SE% 207Pb/206Pb']
                     
