@@ -1063,7 +1063,7 @@ class calc_fncs:
             df['206Pb/238U Age 1s (meas)'] = dage
             df['206Pb/238U Age 1s (tot)'] = dagetot
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
-            if UTh_std_norm == 'Off':
+            if UTh_std_norm == 'No':
                 df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1)) # common Pb and Th disequil corrected 6/38 ratio
                 df['206Pb/238U Age'] = (np.log(df['206Pb/238U c'] + 1) / lambda_238) # common Pb and Th disequil corrected 6/38 age
                 # propagate errors
@@ -1091,7 +1091,7 @@ class calc_fncs:
 
                 df['206Pb/238U Age 1s (meas)'] = dage
                 df['206Pb/238U Age 1s (tot)'] = dagetot
-            elif UTh_std_norm == 'Calc U/Th':
+            elif UTh_std_norm == 'Yes':
                 ThUzrn_calc = 1/df['238U/232Th_calc']
                 df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*((ThUzrn_calc/ThU_magma)-1))
                 df['206Pb/238U Age'] = (np.log(df['206Pb/238U c'] + 1) / lambda_238)
@@ -1333,7 +1333,6 @@ class calc_fncs:
                 
                 mswd_new_pb206u238 = calc_fncs.mswd(df,'206Pb/238U_unc','206Pb/238U Reg. err iterate')
                 added_error_percent = added_error_percent+0.001
-                print(mswd_new_pb206u238)
             
             epipb206u238 = added_error_percent
             
@@ -1343,11 +1342,13 @@ class calc_fncs:
                 
                 mswd_new_pb207pb206 = calc_fncs.mswd(df,'207Pb/206Pb','SE 207Pb/206Pb iterate')
                 added_error_percent = added_error_percent+0.001
-                print(mswd_new_pb207pb206)
                 
             epipb207pb206 = added_error_percent
             
             return epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206
+        
+        else:
+            pass
 
 # %%
 class finalize_ages(param.Parameterized):
@@ -1414,31 +1415,31 @@ class finalize_ages(param.Parameterized):
             fastgrid_layout.modal[0].append(pn.Column(pn.widgets.AutocompleteInput(name='Primary Standard',options=unique_labels,
                                                                                    case_sensitive=False))
                                             )
-            fastgrid_layout.modal[1].append(pn.Column(pn.widgets.AutocompleteInput(name='Secondary Standard RM Ratios',options=unique_labels,
+            fastgrid_layout.modal[1].append(pn.Column(pn.widgets.AutocompleteInput(name='Secondary Standard Excess Errors',options=unique_labels,
                                                                                    case_sensitive=False))
                                             )
-            fastgrid_layout.modal[2].append(pn.Row(pn.widgets.CheckBoxGroup(name='Secondary Standards',options=unique_labels,inline=True))
+            fastgrid_layout.modal[2].append(pn.Row(pn.pane.Markdown('Other Secondary Stds: '),pn.widgets.CheckBoxGroup(name='Secondary Standards',options=unique_labels,inline=True))
                                             )
-            fastgrid_layout.modal[3].append(pn.Column(pn.Row(pn.widgets.RadioButtonGroup(name='Regression Selector',options=['1st Order', 'Exp', 'Total Counts']))
+            fastgrid_layout.modal[3].append(pn.Column(pn.Row(pn.pane.Markdown('Pb/U Ratio Method: '),pn.widgets.RadioButtonGroup(name='Regression Selector',options=['1st Order', 'Exp', 'Total Counts']))
                                                       )
                                             )
-            fastgrid_layout.modal[4].append(pn.Column(pn.Row(pn.widgets.RadioButtonGroup(name='Mass Bias Pb',options=['By Age','NIST-614','NIST-612','NIST-610'])),
-                                                      pn.Row(pn.widgets.RadioButtonGroup(name='Mass Bias Pb Ratio',options=['206Pb/204Pb','207Pb/204Pb','208Pb/204Pb','207Pb/206Pb'])),
-                                                      pn.Row(pn.widgets.RadioButtonGroup(name='Mass Bias U & Th',options=['Primary 238U/235U','NIST-614','NIST-612','NIST-610','None'])),
-                                                      pn.Row(pn.widgets.RadioButtonGroup(name='Mass Bias U & Th Ratio',options=['238U/235U']))
+            fastgrid_layout.modal[4].append(pn.Column(pn.Row(pn.pane.Markdown('Pb/Pb Mass Bias Standard: '),pn.widgets.RadioButtonGroup(name='Mass Bias Pb',options=['By Age','NIST-614','NIST-612','NIST-610'])),
+                                                      pn.Row(pn.pane.Markdown('NIST Pb/Pb Mass Bias Ratio: '),pn.widgets.RadioButtonGroup(name='Mass Bias Pb Ratio',options=['206Pb/204Pb','207Pb/204Pb','208Pb/204Pb','207Pb/206Pb'])),
+                                                      pn.Row(pn.pane.Markdown('Actinide Mass Bias Standard: '),pn.widgets.RadioButtonGroup(name='Mass Bias U & Th',options=['Primary 238U/235U','NIST-614','NIST-612','NIST-610','None'])),
+                                                      pn.Row(pn.pane.Markdown('Actinide Mass Bias Ratio: '),pn.widgets.RadioButtonGroup(name='Mass Bias U & Th Ratio',options=['238U/235U']))
                                                       )
                                             )
-            fastgrid_layout.modal[5].append(pn.Column(pn.Row(pn.widgets.RadioButtonGroup(name='Drift Type',options=['By Age','None'])),
-                                                      pn.Row(pn.widgets.IntInput(name='Nearest Number',value=4,step=1,start=1,end=1000))
+            fastgrid_layout.modal[5].append(pn.Column(pn.Row(pn.pane.Markdown('Calculate Drift: '),pn.widgets.RadioButtonGroup(name='Drift Type',options=['By Age','None'])),
+                                                      pn.Row(pn.widgets.IntInput(name='Drift Correct to Nearest N Primary Standards',value=4,step=1,start=1,end=1000))
                                                       )
                                             )
-            fastgrid_layout.modal[6].append(pn.Column(pn.Row(pn.widgets.RadioButtonGroup(name='Common Pb and U-Th Disequil. Correction',options=['Common Pb', 'Common Pb + Th Disequil.'])),
-                                                      pn.Row(pn.widgets.RadioButtonGroup(name='Calc U/Th from Primary?',options=['Calc U/Th', 'Off'])),
-                                                      pn.Row(pn.widgets.FloatInput(name='Th/U Zircon',value=1)),
-                                                      pn.Row(pn.widgets.FloatInput(name='Th/U Magma',value=3.03))
+            fastgrid_layout.modal[6].append(pn.Column(pn.Row(pn.pane.Markdown('Decay Series Corrections: '),pn.widgets.RadioButtonGroup(name='Common Pb and U-Th Disequil. Correction',options=['Common Pb', 'Common Pb + Th Disequil.'])),
+                                                      pn.Row(pn.pane.Markdown('Inputting Glass [U/Th]: '),pn.widgets.RadioButtonGroup(name='Calc U/Th from Primary?',options=['Yes', 'No'])),
+                                                      pn.Row(pn.widgets.FloatInput(name='Hard-set Th/U Zircon',value=1)),
+                                                      pn.Row(pn.widgets.FloatInput(name='Hard-set Th/U Magma',value=3.03))
                                                       )
                                             )
-            fastgrid_layout.modal[7].append(pn.Column(pn.Row(pn.widgets.RadioButtonGroup(name='RM Ratio Errors',options=['Secondary Age', 'Secondary Normalized Ratios', 'Primary Raw Ratios']))))
+            fastgrid_layout.modal[7].append(pn.Column(pn.Row(pn.pane.Markdown('Calculate Excess Variance From: '),pn.widgets.RadioButtonGroup(name='RM Ratio Errors',options=['Secondary Age', 'Secondary Normalized Ratios', 'Primary Raw Ratios']))))
             fastgrid_layout.modal[8].append(pn.Row(modal_button_one))
             fastgrid_layout.open_modal()
                 
@@ -1447,22 +1448,22 @@ class finalize_ages(param.Parameterized):
                 'mass_bias_pb','mass_bias_pb_ratio','mass_bias_thu','mass_bias_thu_ratio',
                 'Pb_Th_std_crct_selector','ThU_zrn_input','ThU_magma_input','calc_RM_ratio_errors')
     def _accept_reduction_parameters(self,event=None):
-        u_pb_ratio_treatment = fastgrid_layout.modal[3][0][0][0].value
+        u_pb_ratio_treatment = fastgrid_layout.modal[3][0][0][1].value
         global pb_bias_type
-        pb_bias_type = fastgrid_layout.modal[4][0][0][0].value
-        pb_bias_ratio = fastgrid_layout.modal[4][0][1][0].value
-        u_bias_type = fastgrid_layout.modal[4][0][2][0].value
-        u_bias_ratio = fastgrid_layout.modal[4][0][3][0].value
+        pb_bias_type = fastgrid_layout.modal[4][0][0][1].value
+        pb_bias_ratio = fastgrid_layout.modal[4][0][1][1].value
+        u_bias_type = fastgrid_layout.modal[4][0][2][1].value
+        u_bias_ratio = fastgrid_layout.modal[4][0][3][1].value
         primary_std = fastgrid_layout.modal[0][0][0].value
         secondary_std_RMRatioUnc = fastgrid_layout.modal[1][0][0].value
-        drift_treatment = fastgrid_layout.modal[5][0][0][0].value
+        drift_treatment = fastgrid_layout.modal[5][0][0][1].value
         drift_nearest = fastgrid_layout.modal[5][0][1][0].value
-        secondary_standard_list = fastgrid_layout.modal[2][0][0].value
-        commonPb_Thdisequil_treatment_stds = fastgrid_layout.modal[6][0][0][0].value
-        UTh_disequil_stds = fastgrid_layout.modal[6][0][1][0].value
+        secondary_standard_list = fastgrid_layout.modal[2][0][1].value
+        commonPb_Thdisequil_treatment_stds = fastgrid_layout.modal[6][0][0][1].value
+        UTh_disequil_stds = fastgrid_layout.modal[6][0][1][1].value
         ThUzirconratio_stds = fastgrid_layout.modal[6][0][2][0].value
         ThUmagmaratio_stds = fastgrid_layout.modal[6][0][3][0].value
-        RMratioerrortype = fastgrid_layout.modal[7][0][0][0].value
+        RMratioerrortype = fastgrid_layout.modal[7][0][0][1].value
 
         self.text_standard_selector = primary_std
         self.text_secondary_selector = secondary_std_RMRatioUnc
@@ -1655,7 +1656,6 @@ class finalize_ages(param.Parameterized):
     
     
     @pn.depends('input_data', 'text_sample_selector','text_standard_selector','output_secondary_data','drift_selector', 'drift_nearest_amount', 'calc_RM_ratio_errors', 'regression_selector')
-    # def call_excessvariance_plots(self):
     def _show_RM_ratios(self):
         if self.text_sample_selector != 'Input Sample ID':
             chosen_std = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_standard_selector)]
@@ -1669,12 +1669,11 @@ class finalize_ages(param.Parameterized):
                         nearest_stds = chosen_std.iloc[(chosen_std['measurementindex']-chosen_secondary_data.loc[i,'measurementindex']).abs().argsort()[:self.drift_nearest_amount]] # get nearest standards
                         if self.calc_RM_ratio_errors == 'Secondary Age':
                             epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(chosen_secondary_data, self.regression_selector, self.calc_RM_ratio_errors)
-                            chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
-                            chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
+                            chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']/100*chosen_secondary_data.loc[i,'207Pb/206Pb c']
                             chosen_secondary_data.loc[i,'Epsilon 207Pb/206Pb'] = epi
                             chosen_secondary_data.loc[i,'Epsilon 206Pb/238U'] = epi
                             if epi > 0.001:
-                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] + epi*100
+                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = (chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] + epi*chosen_secondary_data.loc[i,'SE 207Pb/206Pb'])/chosen_secondary_data.loc[i,'207Pb/206Pb c']*100
                                 chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] + epi*chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
                             else:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
@@ -1683,12 +1682,11 @@ class finalize_ages(param.Parameterized):
                             RM_isotope_ratio_data = chosen_secondary_data
                         elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                             epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(chosen_secondary_data, self.regression_selector, self.calc_RM_ratio_errors)
-                            chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
-                            chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
+                            chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']/100*chosen_secondary_data.loc[i,'207Pb/206Pb c']
                             chosen_secondary_data.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
                             chosen_secondary_data.loc[i,'Epsilon 206Pb/238U'] = epipb206u238
                             if epipb207pb206 > 0.001:
-                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
+                                chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = (chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] + epipb207pb206*chosen_secondary_data.loc[i,'SE 207Pb/206Pb'])/chosen_secondary_data.loc[i,'207Pb/206Pb c']*100
                             else:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
                             if epipb206u238 > 0.001:
@@ -1699,12 +1697,11 @@ class finalize_ages(param.Parameterized):
                             RM_isotope_ratio_data = chosen_secondary_data
                         elif self.calc_RM_ratio_errors == 'Primary Raw Ratios':
                             epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(nearest_stds, self.regression_selector, self.calc_RM_ratio_errors)
-                            chosen_std.loc[i,'SE% 207Pb/206Pb'] = chosen_std.loc[i,'SE% 207Pb/206Pb']
-                            chosen_std.loc[i,'206Pb/238U Reg. err'] = chosen_std.loc[i,'206Pb/238U Reg. err']
+                            chosen_std.loc[i,'SE 207Pb/206Pb'] = chosen_std.loc[i,'SE% 207Pb/206Pb']/100*chosen_std.loc[i,'207Pb/206Pb']
                             chosen_std.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
                             chosen_std.loc[i,'Epsilon 206Pb/238U'] = epipb206u238
                             if epipb207pb206 > 0.001:
-                                chosen_std.loc[i,'SE% 207Pb/206Pb epi'] = chosen_std.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
+                                chosen_std.loc[i,'SE% 207Pb/206Pb epi'] = (chosen_std.loc[i,'SE 207Pb/206Pb'] + epipb207pb206*chosen_std.loc[i,'SE 207Pb/206Pb'])/chosen_std.loc[i,'207Pb/206Pb']*100
                             else:
                                 chosen_std.loc[i,'SE% 207Pb/206Pb epi'] = chosen_std.loc[i,'SE% 207Pb/206Pb']
                             if epipb206u238 > 0.001:
@@ -1718,12 +1715,11 @@ class finalize_ages(param.Parameterized):
             else:
                 if self.calc_RM_ratio_errors == 'Secondary Age':
                     epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(chosen_secondary_data, self.regression_selector, self.calc_RM_ratio_errors)
-                    chosen_secondary_data['SE% 207Pb/206Pb'] = chosen_secondary_data['SE% 207Pb/206Pb']
-                    chosen_secondary_data['206Pb/238U Reg. err'] = chosen_secondary_data['206Pb/238U Reg. err']
+                    chosen_secondary_data['SE 207Pb/206Pb'] = chosen_secondary_data['SE% 207Pb/206Pb']/100*chosen_secondary_data['207Pb/206Pb c']
                     chosen_secondary_data['Epsilon 207Pb/206Pb'] = epi
                     chosen_secondary_data['Epsilon 206Pb/238U'] = epi
                     if epi > 0.001:
-                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb'] + epi*100
+                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = (chosen_secondary_data['SE 207Pb/206Pb'] + epi*chosen_secondary_data['SE 207Pb/206Pb'])/chosen_secondary_data['207Pb/206Pb c']*100
                         chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err'] + epi*chosen_secondary_data['206Pb/238U Reg. err']
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
@@ -1733,13 +1729,13 @@ class finalize_ages(param.Parameterized):
                     
                 elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                     epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(chosen_secondary_data, self.regression_selector, self.calc_RM_ratio_errors)
-                    chosen_secondary_data['SE% 207Pb/206Pb'] = chosen_secondary_data['SE% 207Pb/206Pb']
+                    chosen_secondary_data['SE 207Pb/206Pb'] = chosen_secondary_data['SE% 207Pb/206Pb']/100*chosen_secondary_data['207Pb/206Pb c']
                     chosen_secondary_data['206Pb/238U Reg. err'] = chosen_secondary_data['206Pb/238U Reg. err']
                     chosen_secondary_data['Epsilon 207Pb/206Pb'] = epipb207pb206
                     chosen_secondary_data['Epsilon 206Pb/238U'] = epipb206u238
                     chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
                     if epipb207pb206 > 0.001:
-                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb'] + epipb207pb206*100
+                        chosen_secondary_data['SE% 207Pb/206Pb epi'] = (chosen_secondary_data['SE 207Pb/206Pb'] + epipb207pb206*chosen_secondary_data['SE 207Pb/206Pb'])/chosen_secondary_data['207Pb/206Pb c']*100
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
                     if epipb206u238 > 0.001:
@@ -1751,12 +1747,11 @@ class finalize_ages(param.Parameterized):
                     
                 elif self.calc_RM_ratio_errors == 'Primary Raw Ratios':
                     epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(chosen_std, self.regression_selector, self.calc_RM_ratio_errors)
-                    chosen_std['SE% 207Pb/206Pb'] = chosen_std['SE% 207Pb/206Pb']
-                    chosen_std['206Pb/238U Reg. err'] = chosen_std['206Pb/238U Reg. err']
-                    chosen_std['Epsilon 207Pb/206Pb'] = epipb207pb206*100
+                    chosen_std['SE 207Pb/206Pb'] = chosen_std['SE% 207Pb/206Pb']/100*chosen_std['207Pb/206Pb c']
+                    chosen_std['Epsilon 207Pb/206Pb'] = epipb207pb206
                     chosen_std['Epsilon 206Pb/238U'] = epipb206u238
                     if epipb207pb206 > 0.001:
-                        chosen_std['SE% 207Pb/206Pb epi'] = chosen_std['SE% 207Pb/206Pb'] + epipb207pb206*100
+                        chosen_std['SE% 207Pb/206Pb epi'] = (chosen_std['SE 207Pb/206Pb'] + epipb207pb206*chosen_std['SE 207Pb/206Pb'])/chosen_std['207Pb/206Pb c']*100
                     else:
                         chosen_std['SE% 207Pb/206Pb epi'] = chosen_std['SE% 207Pb/206Pb']
                     
@@ -1801,99 +1796,6 @@ class finalize_ages(param.Parameterized):
     def export_data(self, event=None):
         
         mask = self.output_secondary_data['Sample'].isin(stds_dict.keys())
-        
-        # if len(self.output_secondary_data[mask]) >= 1:
-        #     for s in self.output_secondary_data['Sample'].unique():
-        #         s_df = self.output_secondary_data[self.output_secondary_data['Sample'] == s]
-        #         s_df = s_df.reset_index(drop=True)
-        #         accepted_206238age = accepted_ages.get(s)[0]
-        #         accepted_207235age = accepted_ages.get(s)[1]
-        #         d206238age = s_df['206Pb/238U Age']-accepted_206238age
-        #         d207235age = s_df['207Pb/235U Age']-accepted_207235age
-                
-        #         fig,ax = plt.subplots(3,2,figsize=(30,30))
-        #         ax[0,0].plot([min(s_df['235U']),max(s_df['235U'])],[137.818,137.818],'-b',lw=0.5)
-        #         ax[0,0].errorbar(s_df['235U'],s_df['238U/235U c'],xerr=s_df['235U_1SE']*2,yerr=s_df['SE% 238U/235U']*s_df['238U/235U']/100*2,fmt='none',ecolor='k',lw=0.6)
-        #         ax[0,0].plot(s_df['235U'],s_df['238U/235U c'],'d',mfc='lightgray',mec='k',lw=0)
-        #         ax[0,0].set_xlabel('CPS 235U')
-        #         ax[0,0].set_ylabel('238U/235U Corrected')
-        #         ax[0,0].set_title(s)
-                
-        #         ax[0,1].errorbar(s_df['207Pb'],s_df['207Pb/206Pb c'],xerr=s_df['207Pb_1SE']*2,yerr=s_df['SE% 207Pb/206Pb']*s_df['207Pb/206Pb']/100*2,fmt='none',ecolor='k',lw=0.6)
-        #         ax[0,1].plot(s_df['207Pb'],s_df['207Pb/206Pb c'],'d',mfc='lightgray',mec='k',lw=0)
-        #         ax[0,1].set_xlabel('CPS 207Pb')
-        #         ax[0,1].set_ylabel('207Pb/206Pb Corrected')
-                
-        #         ax[1,0].plot([min(s_df['238U/235U c']),max(s_df['238U/235U c'])],[0,0],'-b',lw=0.5)
-        #         ax[1,0].errorbar(s_df['238U/235U c'],d206238age/1e6,xerr=s_df['SE% 238U/235U']*s_df['238U/235U']/100*2,yerr=s_df['206Pb/238U Age 1s (tot)']*2/1e6,fmt='none',ecolor='k',lw=0.6)
-        #         ax[1,0].plot(s_df['238U/235U c'],d206238age/1e6,'d',mfc='lightgray',mec='k',lw=0)
-        #         ax[1,0].set_xlabel('238U/235U Corrected')
-        #         ax[1,0].set_ylabel('206Pb/238U Age Offset (Ma)')
-                
-        #         ax[1,1].plot([min(s_df['207Pb/206Pb c']),max(s_df['207Pb/206Pb c'])],[0,0],'-b',lw=0.5)
-        #         ax[1,1].errorbar(s_df['207Pb/206Pb c'],d206238age/1e6,xerr=s_df['SE% 207Pb/206Pb']*s_df['207Pb/206Pb']/100*2,yerr=s_df['206Pb/238U Age 1s (tot)']*2/1e6,fmt='none',ecolor='k',lw=0.6)
-        #         ax[1,1].plot(s_df['207Pb/206Pb c'],d206238age/1e6,'d',mfc='lightgray',mec='k',lw=0)
-        #         ax[1,1].set_xlabel('207Pb/206Pb Corrected')
-        #         ax[1,1].set_ylabel('206Pb/238U Age Offset (Ma)')
-                
-        #         ax[2,0].plot([min(s_df['238U/235U c']),max(s_df['238U/235U c'])],[0,0],'-b',lw=0.5)
-        #         ax[2,0].errorbar(s_df['207Pb/206Pb c'],d207235age/1e6,xerr=s_df['SE% 207Pb/206Pb']*s_df['207Pb/206Pb']/100*2,yerr=s_df['207Pb/235U Age 1s']*2/1e6,fmt='none',ecolor='k',lw=0.6)
-        #         ax[2,0].plot(s_df['207Pb/206Pb c'],d207235age/1e6,'d',mfc='lightgray',mec='k',lw=0)
-        #         ax[2,0].set_xlabel('207Pb/206Pb Corrected')
-        #         ax[2,0].set_ylabel('207Pb/235U Age Offset (Ma)')
-                
-        #         ax[2,1].plot([min(s_df['207Pb/206Pb c']),max(s_df['207Pb/206Pb c'])],[0,0],'-b',lw=0.5)
-        #         ax[2,1].errorbar(s_df['207Pb/206Pb c'],d207235age/1e6,xerr=s_df['SE% 207Pb/206Pb']*s_df['207Pb/206Pb']/100*2,yerr=s_df['207Pb/235U Age 1s']*2/1e6,fmt='none',ecolor='k',lw=0.6)
-        #         ax[2,1].plot(s_df['207Pb/206Pb c'],d207235age/1e6,'d',mfc='lightgray',mec='k',lw=0)
-        #         ax[2,1].set_xlabel('207Pb/206Pb Corrected')
-        #         ax[2,1].set_ylabel('207Pb/235U Age Offset (Ma)')
-                
-        #         plt.savefig(s+' Age Assessment.png',format='png',dpi=250)
-
-        #         boxfig = Figure(figsize=(1, 4))
-        #         ax = boxfig.add_subplot()
-
-        #         bp = ax.boxplot(s_df['206Pb/238U Age']/1e6, patch_artist=True, boxprops=dict(facecolor='slategray', color='k'),
-        #                         medianprops=dict(color='limegreen'), meanprops=dict(marker='d', mfc='limegreen', mec='k', markersize=4),
-        #                         flierprops=dict(
-        #                             marker='o', mfc='None', mec='k', markersize=4),
-        #                         showmeans=True)
-
-        #         ax.text(0.05, 0.8, 'Mean ='+str(round(s_df['206Pb/238U Age'].mean()/1e6, 2)),
-        #                 fontsize=4, transform=ax.transAxes)
-        #         ax.text(0.05, 0.7, 'Med ='+str(round(s_df['206Pb/238U Age'].median()/1e6, 2)),
-        #                 fontsize=4, transform=ax.transAxes)
-        #         ax.text(0.05, 0.6, 'Min ='+str(round(s_df['206Pb/238U Age'].min()/1e6, 2)),
-        #                 fontsize=4, transform=ax.transAxes)
-        #         ax.text(0.05, 0.5, 'Max ='+str(round(s_df['206Pb/238U Age'].max()/1e6, 2)),
-        #                 fontsize=4, transform=ax.transAxes)
-        #         ax.text(0.05, 0.4, 'n = '+str(len(s_df['206Pb/238U Age'])),
-        #                 fontsize=4, transform=ax.transAxes)
-
-        #         ax.set_ylabel('206Pb/238U Age (Ma)', fontsize=12)
-        #         ax.set_xlabel(' ', fontsize=1)
-        #         ax.tick_params(axis='both', labelsize=8)
-        #         ax.set_title(s)
-        #         boxfig.savefig(s+' Boxplot.png',format='png',dpi=250)
-        #     output_secondary_data_grps = self.output_secondary_data.groupby('Sample')
-        #     fig,ax = plt.subplots(2,1,figsize=(8,10))
-        #     ax[0].plot([min(self.output_secondary_data['measurementindex']),max(self.output_secondary_data['measurementindex'])],[0,0],'-b',lw=0.5)
-        #     ax[1].plot([min(self.output_secondary_data['measurementindex']),max(self.output_secondary_data['measurementindex'])],[0,0],'-b',lw=0.5)
-        #     for (i,j),c,m in zip(output_secondary_data_grps,cycle(color_palette),cycle(markers)):
-        #         accepted_206238age = accepted_ages.get(i)[0]
-        #         accepted_207235age = accepted_ages.get(i)[1]
-        #         d206238ages = j['206Pb/238U Age']-accepted_206238age
-        #         d207235ages = j['207Pb/235U Age']-accepted_207235age
-        #         ax[0].errorbar(j['measurementindex'],d206238ages/1e6,yerr=j['206Pb/238U Age 1s (tot)']*2/1e6,fmt='none',ecolor='k',lw=0.6)
-        #         ax[0].plot(j['measurementindex'],d206238ages/1e6,marker=m,mfc=c,mec='k',lw=0,label=i)
-        #         ax[1].errorbar(j['measurementindex'],d207235ages/1e6,yerr=j['207Pb/235U Age 1s']*2/1e6,fmt='none',ecolor='k',lw=0.6)
-        #         ax[1].plot(j['measurementindex'],d207235ages/1e6,marker=m,mfc=c,mec='k',lw=0,label=i)
-        #         ax[0].set_xlabel('Measurement')
-        #         ax[1].set_xlabel('Measurement')
-        #         ax[0].set_ylabel('206Pb/238U Age Offset (Ma)')
-        #         ax[1].set_ylabel('207Pb/235U Age Offset (Ma)')
-        #         ax[0].legend(loc='best')
-        #     plt.savefig('AllSecondary_ages_drift.png',format='png',dpi=250)
                     
         cols_to_drop = ['Sample','Sample Analysis Number','238U/206Pb','206Pb/238U_unc','206Pb/238U Reg. err','207Pb/235U','207Pb/235U Reg. err','206Pb/238U_age_init',
                         '207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb','SK 207Pb/206Pb','frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std',
