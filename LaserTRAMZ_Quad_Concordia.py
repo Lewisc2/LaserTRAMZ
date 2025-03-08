@@ -895,7 +895,7 @@ class calc_fncs:
                             if calc_RM_ratio_errors == 'Secondary Age':
                                 epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(nearest_secondary_stds, regression_selector, calc_RM_ratio_errors)
                                 if epi > 0.001:
-                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epi*100
+                                    df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epi*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epi*df.loc[i,'206Pb/238U Reg. err']
                                 else:
                                     pass
@@ -904,7 +904,7 @@ class calc_fncs:
                             elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                                 epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(nearest_secondary_stds, regression_selector, calc_RM_ratio_errors)
                                 if epipb207pb206 > 0.001:
-                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
+                                    df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epipb207pb206*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
                                 else:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
@@ -916,7 +916,7 @@ class calc_fncs:
                             elif calc_RM_ratio_errors == 'Primary Raw Ratios':
                                 epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(std, regression_selector, calc_RM_ratio_errors)
                                 if epipb207pb206 > 0.001:
-                                    df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb'] + epipb207pb206*100
+                                    df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epipb207pb206*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
                                 else:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
@@ -949,7 +949,7 @@ class calc_fncs:
                     if calc_RM_ratio_errors == 'Secondary Age':
                         epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(df_secondary, regression_selector, calc_RM_ratio_errors)
                         if epi > 0.001:
-                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epi*100
+                            df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epi*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epi*df['206Pb/238U Reg. err']
                         else:
                             pass
@@ -958,7 +958,7 @@ class calc_fncs:
                     elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                         epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(df_secondary, regression_selector, calc_RM_ratio_errors)
                         if epipb207pb206 > 0.001:
-                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epipb207pb206*100
+                            df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epipb207pb206*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
                         else:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
@@ -970,7 +970,7 @@ class calc_fncs:
                     elif calc_RM_ratio_errors == 'Primary Raw Ratios':
                         epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(std, regression_selector, calc_RM_ratio_errors)
                         if epipb207pb206 > 0.001:
-                            df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + epipb207pb206*100
+                            df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epipb207pb206*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
                         else:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
