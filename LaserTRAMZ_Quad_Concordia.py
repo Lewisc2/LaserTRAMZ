@@ -897,6 +897,7 @@ class calc_fncs:
                                 if epi > 0.001:
                                     df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epi*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epi*df.loc[i,'206Pb/238U Reg. err']
+                                    df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 else:
                                     pass
                                 df.loc[i,'Epsilon 207Pb/206Pb'] = epi
@@ -909,6 +910,7 @@ class calc_fncs:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epipb206u238*df.loc[i,'206Pb/238U Reg. err']
+                                    df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 else:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err']
                                 df.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
@@ -921,6 +923,7 @@ class calc_fncs:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epipb206u238*df.loc[i,'206Pb/238U Reg. err']
+                                    df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 else:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err']
                                 df.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
@@ -951,6 +954,7 @@ class calc_fncs:
                         if epi > 0.001:
                             df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epi*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epi*df['206Pb/238U Reg. err']
+                            df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         else:
                             pass
                         df['Epsilon 207Pb/206Pb'] = epi
@@ -963,6 +967,7 @@ class calc_fncs:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epipb206u238*df['206Pb/238U Reg. err']
+                            df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         else:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err']
                         df['Epsilon 207Pb/206Pb'] = epipb207pb206
@@ -975,6 +980,7 @@ class calc_fncs:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epipb206u238*df['206Pb/238U Reg. err']
+                            df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         else:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err']
                         df['Epsilon 207Pb/206Pb'] = epipb207pb206
@@ -1509,6 +1515,7 @@ class finalize_ages(param.Parameterized):
         
         self.input_data['206Pb/238U_age_init'] = np.log((1/self.input_data['238U/206Pb']) + 1) / lambda_238
         self.input_data['207Pb/235U_age_init'] = np.log(self.input_data['207Pb/235U'] + 1) / lambda_235
+        self.input_data['SE 207Pb/206Pb'] = self.input_data['SE% 207Pb/206Pb']/100 * self.input_data['207Pb/206Pb']
         self.output_data = pd.DataFrame([np.zeros(len(self.input_data.columns))], columns=list(self.input_data.columns))
             
         if pb_bias_type != 'By Age':
