@@ -65,25 +65,28 @@ mass_dict = {'238U': 238.050788427,
              '202Hg': 201.970643011,
              }
 # create a dictionary that holds known or estimated U/Th ratios of zircon and associated magma for standards, as well as common Pb ratios
-stds_dict = {'Temora': [2.4, 0.79200, 18.0528, 15.5941, 0.055137],  # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
+# each standard list has values in the order of: [U/Th] zircon avg for Th. disequil, [U/Th] melt avg for Th disequil, host melt 206/204, host melt 207/204, ___, Avg [U], True [U/Th]
+# note zero is put in for standards with no reported 238U avg concentration. Currently just Plesovice which is heterogenous and Tan-Bra which is unpublished.
+# Assumed D = 0.33 for standards that have no known melt [U/Th] concentration to handle disequil. True [U/Th] is for calculating concentrations
+stds_dict = {'Temora': [2.4, 0.79200, 18.0528, 15.5941, 0.055137, 175, 2.4],  # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
               # Schmitz and Bowring 2001; only one with measured common Pb so far
-              'FishCanyon': [1.496558, 0.454545, 18.4275, 15.5425, 0.046615],
+              'FishCanyon': [1.496558, 0.454545, 18.4275, 15.5425, 0.046615, 467, 0.668], # only single grain measurements
               # Klepeis et al 1998
-              '94-35': [1, 0.33, 18.6191, 15.626, 0.047145],
+              '94-35': [1, 0.33, 18.6191, 15.626, 0.047145, 141.4, 0],
               # Slama et al 2008
-              'Plesovice': [10.7, 0.25, 18.1804, 15.6022, 0.053218],
+              'Plesovice': [10.7, 0.25, 18.1804, 15.6022, 0.053218, 0, 0],
               # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
-              'R33': [1.4, 0.46200, 18.0487, 15.5939, 0.055199],
+              'R33': [1.4, 0.46200, 18.0487, 15.5939, 0.055199, 175, 1.4],
               # Wiedenbeck et al 1995
-              '91500': [1, 0.33, 16.9583, 15.4995, 0.074806],
+              '91500': [1, 0.33, 16.9583, 15.4995, 0.074806, 81.2, 2.9],
               # Paces and Miller 1993. Ambiguous Th correction > assumed D = 0.33
-              'FC1': [1.7, 0.56100, 16.892, 15.492, 0.076203],
+              'FC1': [1.7, 0.56100, 16.892, 15.492, 0.076203, 574.8, 1.7],
               # unpublished; Bowring > assumed D = 0.33
-              'Oracle': [2.2, 0.725999, 16.2726, 15.4099, 0.090545],
+              'Oracle': [2.2, 0.725999, 16.2726, 15.4099, 0.090545, 277, 2.2],
               # Pecha unpublished > assumed D = 0.33
-              'Tan-Bra': [1.2, 0.39600, 14.0716, 14.8653, 0.165098],
+              'Tan-Bra': [1.2, 0.39600, 14.0716, 14.8653, 0.165098, 0, 0],
               # Stern et al 2009. Ambiguous Th correction > assumed D = 0.33
-              'OG1': [1.3, 0.42900, 11.8337, 13.6071, 0.294475]
+              'OG1': [1.3, 0.42900, 11.8337, 13.6071, 0.294475, 181, 1.3]
               }  
 
 accepted_ages = {
@@ -508,9 +511,99 @@ class calc_fncs:
                     ax.annotate(label, age, textcoords='offset points', ha='center', fontsize=5)
 
         return fig
+    
 
+    def calculate_concentrations(std_concentration_df,concentration_treatment,primary_std,secondary_std_RMRatioUnc,secondary_standard_list):
+        if concentration_treatment == 'Primary':
+            std_concentration_data = std_concentration_df[std_concentration_df['SampleLabel'].str.contains(primary_std)]
+            std_concentration_data = std_concentration_data.reset_index(drop=True)
+            
+            u_concentration = stds_dict.get(primary_std)[5]
+            uth = stds_dict.get(primary_std)[6]
+            th_concentration = 1/uth * u_concentration
+            
+            uintensity = std_concentration_data['238U'].mean()
+            thintensity = std_concentration_data['232Th'].mean()
+            
+            u_concentration_factor = u_concentration/uintensity
+            th_concentration_factor = th_concentration/thintensity
+            return_list = [u_concentration_factor,th_concentration_factor]
+            
+            return return_list
+        
+        elif concentration_treatment == 'Selected Secondary':
+            std_concentration_data = std_concentration_df[std_concentration_df['SampleLabel'].str.contains(secondary_std_RMRatioUnc)]
+            std_concentration_data = std_concentration_data.reset_index(drop=True)
+            
+            u_concentration = stds_dict.get(secondary_std_RMRatioUnc)[5]
+            uth = stds_dict.get(secondary_std_RMRatioUnc)[6]
+            th_concentration = 1/uth * u_concentration
+            
+            uintensity = std_concentration_data['238U'].mean()
+            thintensity = std_concentration_data['232Th'].mean()
+            
+            u_concentration_factor = u_concentration/uintensity
+            th_concentration_factor = th_concentration/thintensity
+            return_list = [u_concentration_factor,th_concentration_factor]
+            
+            return return_list
+        
+        elif concentration_treatment == 'Fitted Standard Regression':
+            stds = []
+            stds_uconcentrations = []
+            stds_thconcentrations = []
+            stds_uintensities = []
+            stds_thintensities = []
+            
+            secondary_standard_list.append(primary_std)
+            
+            for i in secondary_standard_list:
+                std_concentration_data = std_concentration_df[std_concentration_df['SampleLabel'].str.contains(i)]
+                std_concentration_data = std_concentration_data.reset_index(drop=True)
+                
+                u_concentration = stds_dict.get(i)[5]
+                uth = stds_dict.get(i)[6]
+                th_concentration = 1/uth * u_concentration
+                
+                uintensity = std_concentration_data['238U'].mean()
+                thintensity = std_concentration_data['232Th'].mean()
+                
+                stds.append(i)
+                stds_uconcentrations.append(u_concentration)
+                stds_thconcentrations.append(th_concentration)
+                stds_uintensities.append(uintensity)
+                stds_thintensities.append(thintensity)
+                
+            u_regression_result = scipy.stats.linregress(stds_uintensities,stds_uconcentrations)
+            th_regression_result = scipy.stats.linregress(stds_thintensities,stds_uconcentrations)
+            
+            fig,ax = plt.subplots(2,1,figsize=(10,5))
+            u_x = np.linspace(min(stds_uintensities),max(stds_uintensities))
+            th_x = np.linspace(min(stds_thintensities),max(stds_thintensities))
+            for i,c in zip(range(0,len(stds)),cycle(color_palette)):
+                ax[0].plot(stds_uintensities[i],stds_uconcentrations[i],'o',mfc=c,mec='k',lw=0,label=stds[i])
+                ax[0].plot(u_x,u_x*u_regression_result.slope+u_regression_result.intercept,'--k',lw=0.5)
+                ax[1].plot(stds_thintensities,stds_thconcentrations,'o',mfc=c,mec='k',lw=0,label=stds[i])
+                ax[1].plot(th_x,th_x*th_regression_result.slope+th_regression_result.intercept,'--k',lw=0.5)
+            ax[0].legend()
+            ax[0].set_xlabel('I 238')
+            ax[0].set_ylabel('[U]')
+            ax[1].set_xlabel('I 232')
+            ax[1].set_ylabel('[Th]')
+            
+            plt.savefig('Concentration_regressions.pdf',dpi=200,format='pdf')
+            
+            return_list = [u_regression_result.slope,u_regression_result.intercept,th_regression_result.slope,th_regression_result.intercept]
+            
+            return return_list
+        
+        else:
+            pass
+            
+        
+    
     def plot_drift(std_df, secondary_df, secondary_list, unknown_df, drift_var,
-                   std_txt,ThU_zrn,ThU_magma,Pb_Th_std_crct_selector,regression_selector,UTh_std_norm,common_207206_input,common_207206_error,
+                   std_txt,ThU_zrn,ThU_magma,Pb_Th_std_crct_selector,regression_selector,DThU_treatment,common_207206_input,common_207206_error,
                    drift_treatment,drift_nearest):
         """
         Function that effectively plots the drift. Specifically, looks at the fractionation factor for the requested variable for all secondary standards
@@ -537,8 +630,8 @@ class calc_fncs:
             used for testing. Currently serves no function..
         regression_selector : TYPE
             used for testing. Currently serves no function..
-        UTh_std_norm : TYPE
-            used for testing. Currently serves no function..
+        DThU_treatment : TYPE
+            how to handle DTh/U for Th disequilibrium correction
         common_207206_input : TYPE
             used for testing. Currently serves no function..
         common_207206_error : TYPE
@@ -815,7 +908,7 @@ class calc_fncs:
     
     
     
-    def get_pt_ages(df, std, std_txt, df_secondary, secondary_std_RMRatioUnc, ThU_zrn, ThU_magma, Pb_Th_std_crct_selector, regression_selector, UTh_std_norm, common_207206_input,common_207206_error,
+    def get_pt_ages(df, std, std_txt, df_secondary, secondary_std_RMRatioUnc, ThU_zrn, ThU_magma, Pb_Th_std_crct_selector, regression_selector, DThU_treatment, common_207206_input,common_207206_error,
                     drift_treatment,drift_nearest,calc_RM_ratio_errors,callingmethod):
         """
         Function that calculates ages of unknowns
@@ -836,9 +929,8 @@ class calc_fncs:
             determines if correction should be for just common Pb or Common Pb and Th disequil.
         regression_selector : string
             string dneoting how Pb-U ratios were treated (1st order, exponential, total counts).
-        UTh_std_norm : string
-            whether or not U/Th ratios have been calculated for each analysis. If so, use that ratio.
-            Requires iterating through age calculation at least once.
+        DThU_treatment : string
+            How to handle D Th/U for Th disequilibrium correction
         common_207206_input : float
             value for common Pb 7/6 ratio in common Pb correction.
         common_207206_error : float
@@ -897,9 +989,9 @@ class calc_fncs:
                                 if epi > 0.001:
                                     df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epi*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epi*df.loc[i,'206Pb/238U Reg. err']
-                                    df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 else:
                                     pass
+                                df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 df.loc[i,'Epsilon 207Pb/206Pb'] = epi
                                 df.loc[i,'Epsilon 206Pb/238U'] = epi
                             elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
@@ -910,9 +1002,9 @@ class calc_fncs:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epipb206u238*df.loc[i,'206Pb/238U Reg. err']
-                                    df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 else:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err']
+                                df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 df.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
                                 df.loc[i,'Epsilon 206Pb/238U'] = epipb206u238
                             elif calc_RM_ratio_errors == 'Primary Raw Ratios':
@@ -923,9 +1015,9 @@ class calc_fncs:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epipb206u238*df.loc[i,'206Pb/238U Reg. err']
-                                    df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 else:
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err']
+                                df.loc[i,'SE% 206Pb/238U'] = df.loc[i,'206Pb/238U Reg. err']/df.loc[i,'206Pb/238U_unc']*100
                                 df.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
                                 df.loc[i,'Epsilon 206Pb/238U'] = epipb206u238
                         
@@ -954,9 +1046,9 @@ class calc_fncs:
                         if epi > 0.001:
                             df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epi*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epi*df['206Pb/238U Reg. err']
-                            df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         else:
                             pass
+                        df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         df['Epsilon 207Pb/206Pb'] = epi
                         df['Epsilon 206Pb/238U'] = epi
                     elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
@@ -967,9 +1059,9 @@ class calc_fncs:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epipb206u238*df['206Pb/238U Reg. err']
-                            df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         else:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err']
+                        df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         df['Epsilon 207Pb/206Pb'] = epipb207pb206
                         df['Epsilon 206Pb/238U'] = epipb206u238
                     elif calc_RM_ratio_errors == 'Primary Raw Ratios':
@@ -980,9 +1072,9 @@ class calc_fncs:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epipb206u238*df['206Pb/238U Reg. err']
-                            df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         else:
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err']
+                        df['SE% 206Pb/238U'] = df['206Pb/238U Reg. err']/df['206Pb/238U_unc']*100
                         df['Epsilon 207Pb/206Pb'] = epipb207pb206
                         df['Epsilon 206Pb/238U'] = epipb206u238
             
@@ -1069,7 +1161,7 @@ class calc_fncs:
             df['206Pb/238U Age 1s (meas)'] = dage
             df['206Pb/238U Age 1s (tot)'] = dagetot
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
-            if UTh_std_norm == 'No':
+            if DThU_treatment == 'Zircon Input/Melt Input':
                 df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1)) # common Pb and Th disequil corrected 6/38 ratio
                 df['206Pb/238U Age'] = (np.log(df['206Pb/238U c'] + 1) / lambda_238) # common Pb and Th disequil corrected 6/38 age
                 # propagate errors
@@ -1097,9 +1189,8 @@ class calc_fncs:
 
                 df['206Pb/238U Age 1s (meas)'] = dage
                 df['206Pb/238U Age 1s (tot)'] = dagetot
-            elif UTh_std_norm == 'Yes':
-                ThUzrn_calc = 1/df['238U/232Th_calc']
-                df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*((ThUzrn_calc/ThU_magma)-1))
+            elif DThU_treatment == 'Estimate or Offline/Melt Input':
+                df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*(((df['[Th/U]'])/ThU_magma)-1))
                 df['206Pb/238U Age'] = (np.log(df['206Pb/238U c'] + 1) / lambda_238)
                 # propagate errors
                 # error on fractionation factor. includes error from ID-TIMS and ICPMS
@@ -1125,7 +1216,7 @@ class calc_fncs:
         
         
 
-    def correct_sample_ages(df, std, std_txt, df_secondary, secondary_std_RMRatioUnc, ThU_zrn, ThU_magma, Pb_Th_std_crct_selector, regression_selector, UTh_std_norm, common_207206_input,common_207206_error,drift_treatment,drift_nearest,calc_RM_ratio_errors):
+    def correct_sample_ages(df, std, std_txt, df_secondary, secondary_std_RMRatioUnc, ThU_zrn, ThU_magma, Pb_Th_std_crct_selector, regression_selector, DThU_treatment, common_207206_input,common_207206_error,drift_treatment,drift_nearest,calc_RM_ratio_errors):
         """
         Function used to correct send unknown samples to the methods that get the fully corrected ages. 
         Essentially a funnel for handling the different data types in the unkown points estimates, unknown ellipsoids, and standard points estimates / ellipsoids
@@ -1146,9 +1237,8 @@ class calc_fncs:
             determines if correction should be for just common Pb or Common Pb and Th disequil.
         regression_selector : string
             string dneoting how Pb-U ratios were treated (1st order, exponential, total counts).
-        UTh_std_norm : string
-            whether or not U/Th ratios have been calculated for each analysis. If so, use that ratio.
-            Requires iterating through age calculation at least once.
+        DThU_treament : string
+            How to deal with D Th/U for disequilibrium correction
         common_207206_input : float
             value for common Pb 7/6 ratio in common Pb correction.
         common_207206_error : float
@@ -1168,7 +1258,7 @@ class calc_fncs:
         print('METHOD CALLING GET PT AGES: ')
         print(str(callingmethod))
         pt_ages = calc_fncs.get_pt_ages(df, std, std_txt, df_secondary, secondary_std_RMRatioUnc, ThU_zrn, ThU_magma, Pb_Th_std_crct_selector, regression_selector, 
-                                        UTh_std_norm, common_207206_input,common_207206_error,drift_treatment,drift_nearest,calc_RM_ratio_errors,callingmethod)
+                                        DThU_treatment, common_207206_input,common_207206_error,drift_treatment,drift_nearest,calc_RM_ratio_errors,callingmethod)
         
         
         return pt_ages
@@ -1386,8 +1476,10 @@ class finalize_ages(param.Parameterized):
     common_207206_error = param.Number()
     ThU_zrn_input = param.Number()
     ThU_magma_input = param.Number()
-    UTh_std_norm = param.Selector(default='Off', objects=['Calc U/Th', 'Off'])
+    DThU_treatment = param.Selector(default='Zircon Input/Melt Input', objects=['Zircon Input/Melt Input', 'Estimate or Offline/Melt Input'])
+    outputdataformat = param.Selector(default='Simple', objects=['Simple', 'Annotated Output', 'Full Output'])
     Pb_Th_std_crct_selector = param.Selector(objects=['Common Pb', 'Common Pb + Th Disequil.'])
+    concentration_estimator = param.Selector(default='Primary',objects=['Primary','Selected Secondary','Fitted Standard Regression','Offline Input'])
     mass_bias_pb = param.Selector(objects=['By Age','NIST-614','NIST-612','NIST-610'],precedence=-1)
     mass_bias_pb_ratio = param.Selector(objects=['206Pb/204Pb','207Pb/204Pb','208Pb/204Pb','207Pb/206Pb'],precedence=-1)
     mass_bias_thu = param.Selector(objects=['Primary 238U/235U','NIST-614','NIST-612','NIST-610','None'],precedence=-1)
@@ -1408,7 +1500,7 @@ class finalize_ages(param.Parameterized):
                                                   'update_output_button', 'export_data_button', 'export_TWplot_button',
                                                   'x_axis_TW','y_axis_TW','x_axis_Weth','y_axis_Weth',
                                                   'common_207206_input', 'common_207206_error',
-                                                  'ThU_zrn_input', 'ThU_magma_input'])
+                                                  'ThU_zrn_input', 'ThU_magma_input','concentration_estimator','DThU_treatment'])
 
     @pn.depends('file_path',watch=True)
     def _uploadfile(self):
@@ -1440,13 +1532,15 @@ class finalize_ages(param.Parameterized):
                                                       )
                                             )
             fastgrid_layout.modal[6].append(pn.Column(pn.Row(pn.pane.Markdown('Decay Series Corrections: '),pn.widgets.RadioButtonGroup(name='Common Pb and U-Th Disequil. Correction',options=['Common Pb', 'Common Pb + Th Disequil.'])),
-                                                      pn.Row(pn.pane.Markdown('Inputting Glass [U/Th]: '),pn.widgets.RadioButtonGroup(name='Calc U/Th from Primary?',options=['Yes', 'No'])),
-                                                      pn.Row(pn.widgets.FloatInput(name='Hard-set Th/U Zircon',value=1)),
-                                                      pn.Row(pn.widgets.FloatInput(name='Hard-set Th/U Magma',value=3.03))
+                                                      pn.Row(pn.pane.Markdown('Estimate Zircon [U/Th] By: '),pn.widgets.RadioButtonGroup(options=['Primary','Selected Secondary','Fitted Standard Regression','Offline Input'])),
+                                                      pn.Row(pn.pane.Markdown('Calculate D [U/Th] From: '),pn.widgets.RadioButtonGroup(options=['Zircon Input/Melt Input', 'Estimate or Offline/Melt Input'])),
+                                                      pn.Row(pn.widgets.FloatInput(name='Input [Th/U] Zircon',value=1)),
+                                                      pn.Row(pn.widgets.FloatInput(name='Input [Th/U] Magma',value=3.03))
                                                       )
                                             )
             fastgrid_layout.modal[7].append(pn.Column(pn.Row(pn.pane.Markdown('Calculate Excess Variance From: '),pn.widgets.RadioButtonGroup(name='RM Ratio Errors',options=['Secondary Age', 'Secondary Normalized Ratios', 'Primary Raw Ratios']))))
-            fastgrid_layout.modal[8].append(pn.Row(modal_button_one))
+            fastgrid_layout.modal[8].append(pn.Row(pn.pane.Markdown('Exported Data Format: '),pn.widgets.RadioButtonGroup(options=['Simple', 'Annotated Output', 'Full Output'])))
+            fastgrid_layout.modal[9].append(pn.Row(modal_button_one))
             fastgrid_layout.open_modal()
                 
     @pn.depends('regression_selector', 'drift_selector','drift_nearest_amount',
@@ -1466,10 +1560,12 @@ class finalize_ages(param.Parameterized):
         drift_nearest = fastgrid_layout.modal[5][0][1][0].value
         secondary_standard_list = fastgrid_layout.modal[2][0][1].value
         commonPb_Thdisequil_treatment_stds = fastgrid_layout.modal[6][0][0][1].value
-        UTh_disequil_stds = fastgrid_layout.modal[6][0][1][1].value
-        ThUzirconratio_stds = fastgrid_layout.modal[6][0][2][0].value
-        ThUmagmaratio_stds = fastgrid_layout.modal[6][0][3][0].value
+        concentration_treatment = fastgrid_layout.modal[6][0][1][1].value
+        DThU_treatment = fastgrid_layout.modal[6][0][2][1].value
+        ThUzirconratio_stds = fastgrid_layout.modal[6][0][3][0].value
+        ThUmagmaratio_stds = fastgrid_layout.modal[6][0][4][0].value
         RMratioerrortype = fastgrid_layout.modal[7][0][0][1].value
+        outputdataformat = fastgrid_layout.modal[8][0][1].value
 
         self.text_standard_selector = primary_std
         self.text_secondary_selector = secondary_std_RMRatioUnc
@@ -1482,6 +1578,8 @@ class finalize_ages(param.Parameterized):
         self.u_bias_type = u_bias_type
         self.mass_bias_thu_ratio = u_bias_ratio
         self.calc_RM_ratio_errors = RMratioerrortype
+        self.DThU_treatment = DThU_treatment
+        self.outputdataformat = outputdataformat
         
         
         
@@ -1561,12 +1659,40 @@ class finalize_ages(param.Parameterized):
                 u_f = np.log(accepted_u/np.mean(u_bias_std_df['238U/235U']))/np.log(high_mass_u_wt/low_mass_u_wt)
                 self.input_data['238U/235U c'] = self.input_data['238U/235U']*(high_mass_u_wt/low_mass_u_wt)**u_f
                 print('U Bias Calculated Externally')
-                
+        
+        
+        if concentration_treatment == 'Primary':
+            concentration_factors = calc_fncs.calculate_concentrations(self.input_data, concentration_treatment, primary_std, secondary_std_RMRatioUnc, secondary_standard_list)
+            u_factor = concentration_factors[0]
+            th_factor = concentration_factors[1]
+            self.input_data['[U] µg/g'] = self.input_data['238U']*u_factor
+            self.input_data['[Th] µg/g'] = self.input_data['232Th']*th_factor
+            
+        elif concentration_treatment == 'Selected Secondary':
+            concentration_factors = calc_fncs.calculate_concentrations(self.input_data, concentration_treatment, primary_std, secondary_std_RMRatioUnc, secondary_standard_list)
+            u_factor = concentration_factors[0]
+            th_factor = concentration_factors[1]
+            self.input_data['[U] µg/g'] = self.input_data['238U']*u_factor
+            self.input_data['[Th] µg/g'] = self.input_data['232Th']*th_factor
+            
+        elif concentration_treatment == 'Fitted Standard Regression':
+            concentration_factors = calc_fncs.calculate_concentrations(self.input_data, concentration_treatment, primary_std, secondary_std_RMRatioUnc, secondary_standard_list)
+            uslope = concentration_factors[0]
+            uintercept = concentration_factors[1]
+            thslope = concentration_factors[0]
+            thintercept = concentration_factors[1]
+            self.input_data['[U] µg/g'] = self.input_data['238U']*uslope + uintercept
+            self.input_data['[Th] µg/g'] = self.input_data['232Th']*thslope + thintercept
+            
+        elif concentration_treatment == 'Offline Input':
+            pass
+        
+        self.input_data['[Th/U]'] = self.input_data['[Th] µg/g']/self.input_data['[U] µg/g']
+        
         df_primary = self.input_data[self.input_data['Sample'] == primary_std]
         df_primary = df_primary.reset_index(drop=True)
         df_secondary = self.input_data[self.input_data['Sample'].isin(secondary_standard_list)]
         df_secondary = df_secondary.reset_index(drop=True)
-        
         
         mask = df_secondary['Sample'].isin(stds_dict.keys())
         
@@ -1581,7 +1707,7 @@ class finalize_ages(param.Parameterized):
                 s_df['Common 207Pb/206Pb'] = s_common207206
                 s_df['Common 207Pb/206Pb Error'] = s_common207206_error
                 secondary_ages = calc_fncs.correct_sample_ages(s_df,df_primary,primary_std,df_secondary,secondary_std_RMRatioUnc,ThUzirconratio_stds,ThUmagmaratio_stds,commonPb_Thdisequil_treatment_stds,
-                                                               u_pb_ratio_treatment,UTh_disequil_stds,s_common207206,s_common207206_error,
+                                                               u_pb_ratio_treatment,DThU_treatment,s_common207206,s_common207206_error,
                                                                drift_treatment,drift_nearest,RMratioerrortype)
                 if self.output_secondary_data is None:
                     self.output_secondary_data = secondary_ages
@@ -1596,7 +1722,7 @@ class finalize_ages(param.Parameterized):
     @pn.depends('input_data', 'text_standard_selector','output_secondary_data', 'secondary_std_selector',
                 'drift_selector', 'drift_nearest_amount', 'drift_analyte_dropdown',
                 'mass_bias_pb','mass_bias_thu','regression_selector',
-                'text_standard_selector','ThU_zrn_input','ThU_magma_input','Pb_Th_std_crct_selector','UTh_std_norm','common_207206_input','common_207206_error'
+                'text_standard_selector','ThU_zrn_input','ThU_magma_input','Pb_Th_std_crct_selector','DThU_treatment','common_207206_input','common_207206_error'
                 )
     def call_drift_plot(self):
         if self.text_sample_selector != 'Input Sample ID':
@@ -1605,7 +1731,7 @@ class finalize_ages(param.Parameterized):
             return calc_fncs.plot_drift(chosen_std, self.output_secondary_data, self.secondary_std_selector, 
                                         unknown_df, self.drift_analyte_dropdown,
                                         self.text_standard_selector, self.ThU_zrn_input, self.ThU_magma_input, self.Pb_Th_std_crct_selector, self.regression_selector,
-                                        self.UTh_std_norm,self.common_207206_input,self.common_207206_error,
+                                        self.DThU_treatment,self.common_207206_input,self.common_207206_error,
                                         self.drift_selector,self.drift_nearest_amount
                                         )
         else:
@@ -1645,7 +1771,7 @@ class finalize_ages(param.Parameterized):
 
 
     @pn.depends('input_data', 'text_sample_selector', 'text_standard_selector', 'output_secondary_data', 'text_secondary_selector','label_toggle', 'ThU_zrn_input', 'ThU_magma_input', 'Pb_Th_std_crct_selector', 'regression_selector',
-                'UTh_std_norm', 'common_207206_input', 'common_207206_error', 'calc_RM_ratio_errors')
+                'DThU_treatment', 'common_207206_input', 'common_207206_error', 'calc_RM_ratio_errors')
     def call_boxplot(self):
         pass
         # if self.text_sample_selector != 'Input Sample ID':
@@ -1656,7 +1782,7 @@ class finalize_ages(param.Parameterized):
         #         return 'Placeholder'
         #     else:
         #         ages = calc_fncs.correct_sample_ages(data_toplot, chosen_std, self.text_standard_selector, chosen_secondary_data, self.text_secondary_selector, self.ThU_zrn_input, self.ThU_magma_input, self.Pb_Th_std_crct_selector, self.regression_selector,
-        #                                              self.UTh_std_norm,self.common_207206_input,self.common_207206_error,self.drift_selector,self.drift_nearest_amount,self.calc_RM_ratio_errors)
+        #                                              self.DThU_treatment,self.common_207206_input,self.common_207206_error,self.drift_selector,self.drift_nearest_amount,self.calc_RM_ratio_errors)
         #         return calc_fncs.plot_boxplot(ages['206Pb/238U Age']/(1e6), ages['SampleLabel'], self.label_toggle)
         # else:
         #     pass
@@ -1731,7 +1857,7 @@ class finalize_ages(param.Parameterized):
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
                         chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err']
-                    chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data['206Pb/238U Age'] * ((chosen_secondary_data['206Pb/238U Reg. err epi']/chosen_secondary_data['206Pb/238U_unc'])**2 + (chosen_secondary_data['SE% 207Pb/206Pb epi']/100)**2)**(1/2)
+                    chosen_secondary_data['206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data['206Pb/238U Age'] * ((chosen_secondary_data['206Pb/238U Reg. err epi']/chosen_secondary_data['206Pb/238U_unc'])**2 + (chosen_secondary_data['SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                     RM_isotope_ratio_data = chosen_secondary_data
                     
                 elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
@@ -1784,7 +1910,7 @@ class finalize_ages(param.Parameterized):
         chosen_std = self.input_data[self.input_data['SampleLabel'].str.contains(self.text_standard_selector)]
         chosen_secondary_data = self.output_secondary_data[self.output_secondary_data['SampleLabel'].str.contains(self.text_secondary_selector)]
         ages = calc_fncs.correct_sample_ages(data_to_update, chosen_std, self.text_standard_selector, chosen_secondary_data, self.text_secondary_selector, self.ThU_zrn_input, self.ThU_magma_input, self.Pb_Th_std_crct_selector, self.regression_selector,
-                                             self.UTh_std_norm,self.common_207206_input,self.common_207206_error,self.drift_selector,self.drift_nearest_amount,self.calc_RM_ratio_errors)
+                                             self.DThU_treatment,self.common_207206_input,self.common_207206_error,self.drift_selector,self.drift_nearest_amount,self.calc_RM_ratio_errors)
         if self.output_data is None:
             self.output_data = ages
         else:
@@ -1799,24 +1925,65 @@ class finalize_ages(param.Parameterized):
             self.output_data_widget.heightpolicy = 'Fixed'
             return pn.widgets.Tabulator(self.output_data_widget, width=800)
 
-    @pn.depends('output_data')
+    @pn.depends('output_data','outputdataformat')
     def export_data(self, event=None):
         
         mask = self.output_secondary_data['Sample'].isin(stds_dict.keys())
-                    
-        cols_to_drop = ['Sample','Sample Analysis Number','238U/206Pb','206Pb/238U_unc','206Pb/238U Reg. err','207Pb/235U','207Pb/235U Reg. err','206Pb/238U_age_init',
-                        '207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb','SK 207Pb/206Pb','frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std',
-                        'tims_age_207','tims_error_std_207','avg_std_ratio','avg_std_ratio_Thcrct','avg_std_ratio_207','avg_reg_err','avg_reg_err_207','238U/206Pb_corrected',
-                        '207Pb/235U_corrected','207Pb/206Pbr','counts_pb206r','206Pb/238Upbc_numerical','238U/206Pb err']
-        output_df = self.output_data
-        output_df = output_df.drop(columns=cols_to_drop)
-        output_df = output_df.drop(0,axis=0)
-        output_df = output_df.replace(0,'bdl')
         
+        output_df = self.output_data
         output_secondary_df = self.output_secondary_data
-        output_secondary_df = output_secondary_df.drop(columns=cols_to_drop)
-        output_secondary_df = output_secondary_df.drop(0,axis=0)
-        output_secondary_df = output_secondary_df.replace(0,'bdl')
+        if self.outputdataformat == 'Simple':
+            cols_to_drop = ['measurementindex','t start','t end','t project','b start','b end','206Pb/238U 1st Order','206Pb/238U Exp.','207Pb/235U 1st Order','207Pb/235U Exp.',
+                            '238U/235U','SE% 206Pb/238U 1st Order','SE% 206Pb/238U Exp','SE% 207Pb/235U 1st Order','SE% 207Pb/235U Exp','Weth C','Weth Wid1','Weth Wid2','TW C','TW Wid1','TW Wid2',
+                            'Sample','Sample Analysis Number','238U/206Pb err','206Pb/238U_age_init','207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb','SK 207Pb/206Pb',
+                            'frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std','tims_age_207','tims_error_std_207','avg_std_ratio','avg_std_ratio_207','avg_std_ratio_Thcrct',
+                            'avg_reg_err','avg_reg_err_207','Epsilon 207Pb/206Pb','Epsilon 206Pb/238U','238U/206Pb_corrected','207Pb/235U_corrected','counts_pb206r','206Pb/238Upbc_numerical','206Pb/238U Age 1s (meas)'
+                            ]
+            
+            output_df = output_df.drop(columns=cols_to_drop)
+            output_df = output_df.drop(0,axis=0)
+            output_df = output_df.replace(0,'bdl')
+            
+            cols_rename = {'206Pb/238U_unc': '206Pb/238U', '206Pb/238U Reg. err': 'SE 206Pb/238U', '207Pb/235U Reg. err': 'SE 207Pb/235U', 'f': 'f206',
+                           '207Pb/235Upbc_corrected': '207Pb/235U c','206Pb/238U Age 1s (tot)': '206Pb/238U Age 1s'
+                           }
+            
+            output_df = output_df.rename(columns=cols_rename)
+            output_df = output_df[['SampleLabel','202Hg','204Pb','206Pb','207Pb','208Pb','232Th','235U','238U',
+                                    '202Hg_1SE','204Pb_1SE','206Pb_1SE','207Pb_1SE','208Pb_1SE','232Th_1SE','235U_1SE','238U_1SE',
+                                    '[U] µg/g','[Th] µg/g','[Th/U]','f206','206Pb/204Pb','SE% 206Pb/204Pb','238U/235U c','SE% 238U/235U',
+                                    '206Pb/238U','238U/206Pb','206Pb/238U c','SE 206Pb/238U','SE% 206Pb/238U','207Pb/235U','207Pb/235U c','SE 207Pb/235U',
+                                    '207Pb/206Pb','207Pb/206Pb c','207Pb/206Pbr','SE 207Pb/206Pb','SE% 207Pb/206Pb',
+                                    '207Pb/235U Age','207Pb/235U Age 1s','206Pb/238U Age','206Pb/238U Age 1s'
+                                    ]
+                                   ]
+            
+            # output_secondary_df = output_secondary_df.drop(columns=cols_to_drop)
+            # output_secondary_df = output_secondary_df.drop(0,axis=0)
+            # output_secondary_df = output_secondary_df.replace(0,'bdl')
+            
+        if self.outputdataformat == 'Annotated Output':
+            cols_to_drop = ['measurementindex','t start','t end','t project','b start','b end',
+                            '238U/235U','SE% 206Pb/238U 1st Order','SE% 206Pb/238U Exp','SE% 207Pb/235U 1st Order','SE% 207Pb/235U Exp','Weth C','Weth Wid1','Weth Wid2','TW C','TW Wid1','TW Wid2',
+                            '238U/206Pb err','206Pb/238U_age_init','207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb',
+                            'frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std','tims_age_207','tims_error_207','avg_std_ratio','avg_std_ratio_207','avg_std_ratio_Thcrct',
+                            'avg_reg_err','avg_reg_err_207','238U/206Pb_corrected','207Pb/235U_corrected','counts_pb206r','206Pb/238Upbc_numerical',
+                            ]
+            
+            output_df = output_df.drop(columns=cols_to_drop)
+            output_df = output_df.drop(0,axis=0)
+            output_df = output_df.replace(0,'bdl')
+            
+            # output_secondary_df = output_secondary_df.drop(columns=cols_to_drop)
+            # output_secondary_df = output_secondary_df.drop(0,axis=0)
+            # output_secondary_df = output_secondary_df.replace(0,'bdl')
+            
+        elif self.outputdataformat == 'Full Output':
+            output_df = output_df.drop(0,axis=0)
+            output_df = output_df.replace(0,'bdl')
+            
+            # output_secondary_df = output_secondary_df.drop(0,axis=0)
+            # output_secondary_df = output_secondary_df.replace(0,'bdl')
         
         output_df.to_excel('output_laserTRAMZ_ages.xlsx',startcol=-1)
         output_secondary_df.to_excel('output_laserTRAMZ_secondarystd_ages.xlsx',startcol=-1)
@@ -1855,6 +2022,7 @@ widgets={'label_toggle': pn.widgets.CheckBoxGroup,
 fastgrid_layout = pn.template.VanillaTemplate(title='LaserTRAMZ Concordia: LA-ICP-MC-MS',
                                                 sidebar=pn.Column(pn.WidgetBox(pn.Param(reduce_ages.param,widgets=widgets))),sidebar_width=380)
 
+fastgrid_layout.modal.append(pn.Row())
 fastgrid_layout.modal.append(pn.Row())
 fastgrid_layout.modal.append(pn.Row())
 fastgrid_layout.modal.append(pn.Row())
