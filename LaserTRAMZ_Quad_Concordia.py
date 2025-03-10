@@ -65,7 +65,7 @@ mass_dict = {'238U': 238.050788427,
              '202Hg': 201.970643011,
              }
 # create a dictionary that holds known or estimated U/Th ratios of zircon and associated magma for standards, as well as common Pb ratios
-# each standard list has values in the order of: [U/Th] zircon avg for Th. disequil, [U/Th] melt avg for Th disequil, host melt 206/204, host melt 207/204, ___, Avg [U], True [U/Th]
+# each standard list has values in the order of: [U/Th] zircon avg for Th. disequil, [U/Th] melt avg for Th disequil, host melt 206/204, host melt 207/204, 7/6 ratio, Avg [U], True [U/Th]
 # note zero is put in for standards with no reported 238U avg concentration. Currently just Plesovice which is heterogenous and Tan-Bra which is unpublished.
 # Assumed D = 0.33 for standards that have no known melt [U/Th] concentration to handle disequil. True [U/Th] is for calculating concentrations
 stds_dict = {'Temora': [2.4, 0.79200, 18.0528, 15.5941, 0.055137, 175, 2.4],  # Black et al., 2004. Ambiguous Th correction > assumed D = 0.33
@@ -259,7 +259,7 @@ class calc_fncs:
         # print('Projections Calling Method'+str(callingmethod))
         #     regression_var = '238U/206Pb_corrected'
         if callingmethod == 'get_pt_ages':
-            regression_var = '238U/206Pb_corrected'
+            regression_var = '238U/206Pb c'
         else:
             regression_var = '238U/206Pb'
         # get the TW concordia values
@@ -845,8 +845,16 @@ class calc_fncs:
             # calculated Stacey-Kramers 207/206 overwriting the input 207/206 should manual values be requested
             df['SK 207Pb/206Pb'] = stds_dict.get(std_txt)[3] / stds_dict.get(std_txt)[2]
             common = df['SK 207Pb/206Pb']
+            
+        UThstd, UThstd_rx = stds_dict.get(std_txt)[0], stds_dict.get(std_txt)[1] # get the U/Th ratio of standards and their host rocks
+        DThU = (1/UThstd)/(1/UThstd_rx) # get the D value
+        df['206Pb/238U c'] = df['206Pb/238U_unc'] - (lambda_238/lambda_230*(DThU-1)) # get the 6/38 ratio corrected for common Pb and Th disequil
+        df['238U/206Pb c'] = 1/df['206Pb/238U c']
+        
         # get values projected onto concordia
         concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input)
+        df['206Pb/238U c'] = 1/concordia_238_206 # get concordant 6/38 ratio from projections
+        df['238U/206Pb c'] = 1/df['206Pb/238U c']
         # if common Pb not feasible, assign zero. Retain value otherwise
         for i in range(0,len(common)):
             if common[i] <= 0:
@@ -880,12 +888,8 @@ class calc_fncs:
         df['f'] = f
 
         df['counts_pb206r'] = df['206Pb'] * (1-df['f']) # calculate counts of radiogenic 206
-        df['206Pb/238Upbc_numerical'] = 1 / df['238U/206Pb']-(1/df['238U/206Pb']*f) # calculate 6/38 numerically to make sure all calculations follow theory. Used for testing
-        df['206Pb/238U c'] = 1/concordia_238_206 # get concordant 6/38 ratio from projections
+        df['206Pb/238Upbc_numerical'] = 1 / df['238U/206Pb c']-(1/df['238U/206Pb c']*f) # calculate 6/38 numerically to make sure all calculations follow theory. Used for testing
         df['206Pb/238Uc_age'] = np.log(df['206Pb/238U c'] + 1) / lambda_238 # calculate age of common Pb corrected ratio (concordant point)
-        UThstd, UThstd_rx = stds_dict.get(std_txt)[0], stds_dict.get(std_txt)[1] # get the U/Th ratio of standards and their host rocks
-        DThU = (1/UThstd)/(1/UThstd_rx) # get the D value
-        df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*(DThU-1)) # get the 6/38 ratio corrected for common Pb and Th disequil
         df['206Pb/238UPbTh_age'] = np.log(df['206Pb/238U c'] + 1) / lambda_238 # calculate age of common Pb + Th disequil. ratio
         UTh_std_m = df['238U'].mean()/df['232Th'].mean() # Measured 38/32 ratio from standard
         
@@ -1084,8 +1088,24 @@ class calc_fncs:
         except KeyboardInterrupt:
             print('Interrupted Age Calculations')
         
+        
+        if Pb_Th_std_crct_selector == 'Common Pb':
+            df['206Pb/238U c'] = 1/['238U/206Pb_corrected']
+            df['238U/206Pb c'] = 1/df['206Pb/238U c']
+            
+        elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
+            if DThU_treatment == 'Zircon Input/Melt Input':
+                df['206Pb/238U c'] = 1/(df['238U/206Pb_corrected'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1))) # common Pb and Th disequil corrected 6/38 ratio
+                df['238U/206Pb c'] = 1/df['206Pb/238U c']
+                
+            elif DThU_treatment == 'Estimate or Offline/Melt Input':
+                df['206Pb/238U c'] = 1/(df['238U/206Pb_corrected'] - (lambda_238/lambda_230*(((df['[Th/U]'])/ThU_magma)-1))) # common Pb and Th disequil corrected 6/38 ratio
+                df['238U/206Pb c'] = 1/df['206Pb/238U c']
+        
         # get points needed for correction
         concordia_238_206, pts_pb_r = calc_fncs.get_projections(df, common_207206_input)
+        df['206Pb/238U c'] = 1/concordia_238_206 # projected 6/38 corrected ratio
+        df['238U/206Pb c'] = concordia_238_206
         
         # set up empty arrays to be filled for common lead corrections
         common_filter = np.zeros(len(df['SK 207Pb/206Pb']))
@@ -1121,8 +1141,7 @@ class calc_fncs:
         df['f'] = f
 
         df['counts_pb206r'] = df['206Pb'] * (1-df['f']) # counts of radiogenic 206
-        df['206Pb/238Upbc_numerical'] = 1 / df['238U/206Pb_corrected']-(1/df['238U/206Pb_corrected']*f) # numerically calculated 6/38 corrected ratio
-        df['206Pb/238U c'] = 1/concordia_238_206 # projected 6/38 corrected ratio
+        df['206Pb/238Upbc_numerical'] = 1 / df['238U/206Pb c']-(1/df['238U/206Pb c']*f) # numerically calculated 6/38 corrected ratio
         
         df['207Pb/235Upbc_corrected'] = df['207Pb/235U_corrected']-(df['207Pb/235U_corrected']*f) # numerically calculated 7/35 ratio
         df['207Pb/235U Age'] = np.log(df['207Pb/235Upbc_corrected'] + 1) / lambda_235 # 7/35 common Pb corrected age
@@ -1162,7 +1181,6 @@ class calc_fncs:
             df['206Pb/238U Age 1s (tot)'] = dagetot
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
             if DThU_treatment == 'Zircon Input/Melt Input':
-                df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1)) # common Pb and Th disequil corrected 6/38 ratio
                 df['206Pb/238U Age'] = (np.log(df['206Pb/238U c'] + 1) / lambda_238) # common Pb and Th disequil corrected 6/38 age
                 # propagate errors
                 # error on fractionation factor. includes error from ID-TIMS and ICPMS
@@ -1190,7 +1208,6 @@ class calc_fncs:
                 df['206Pb/238U Age 1s (meas)'] = dage
                 df['206Pb/238U Age 1s (tot)'] = dagetot
             elif DThU_treatment == 'Estimate or Offline/Melt Input':
-                df['206Pb/238U c'] = df['206Pb/238U c'] - (lambda_238/lambda_230*(((df['[Th/U]'])/ThU_magma)-1))
                 df['206Pb/238U Age'] = (np.log(df['206Pb/238U c'] + 1) / lambda_238)
                 # propagate errors
                 # error on fractionation factor. includes error from ID-TIMS and ICPMS
@@ -1952,7 +1969,7 @@ class finalize_ages(param.Parameterized):
             output_df = output_df[['SampleLabel','202Hg','204Pb','206Pb','207Pb','208Pb','232Th','235U','238U',
                                     '202Hg_1SE','204Pb_1SE','206Pb_1SE','207Pb_1SE','208Pb_1SE','232Th_1SE','235U_1SE','238U_1SE',
                                     '[U] µg/g','[Th] µg/g','[Th/U]','f206','206Pb/204Pb','SE% 206Pb/204Pb','238U/235U c','SE% 238U/235U',
-                                    '206Pb/238U','238U/206Pb','206Pb/238U c','SE 206Pb/238U','SE% 206Pb/238U','207Pb/235U','207Pb/235U c','SE 207Pb/235U',
+                                    '206Pb/238U','238U/206Pb','206Pb/238U c','238U/206Pb c','SE 206Pb/238U','SE% 206Pb/238U','207Pb/235U','207Pb/235U c','SE 207Pb/235U',
                                     '207Pb/206Pb','207Pb/206Pb c','207Pb/206Pbr','SE 207Pb/206Pb','SE% 207Pb/206Pb',
                                     '207Pb/235U Age','207Pb/235U Age 1s','206Pb/238U Age','206Pb/238U Age 1s'
                                     ]
