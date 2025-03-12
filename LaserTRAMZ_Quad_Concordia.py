@@ -1090,7 +1090,7 @@ class calc_fncs:
         
         
         if Pb_Th_std_crct_selector == 'Common Pb':
-            df['206Pb/238U c'] = 1/['238U/206Pb_corrected']
+            df['206Pb/238U c'] = 1/df['238U/206Pb_corrected']
             df['238U/206Pb c'] = 1/df['206Pb/238U c']
             
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':

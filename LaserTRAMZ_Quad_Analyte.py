@@ -283,6 +283,8 @@ class calc_fncs:
     def threesig_outlierremoval(data):
         whileloopdata = data.reset_index(drop=True)
         ratios = ['206Pb/238U','207Pb/235U','207Pb/206Pb','238U/235U']
+        max_iter = 1000
+        loopiter = 0
             
         for r in ratios:
             threesig = 3*whileloopdata[r].std()
@@ -292,6 +294,8 @@ class calc_fncs:
             while loopvariable == True:
                 # break the loop if the regression fails and the array is nan of length 1
                 if len(whileloopdata)<=2:
+                    break
+                elif loopiter >= max_iter:
                     break
                 else:
                     for i in range(1,len(whileloopdata)-1):
@@ -309,6 +313,7 @@ class calc_fncs:
                         trigger = False # reset trigger variable in prep for next loop
                     else:
                         loopvariable = False
+                loopiter = loopiter+1
                         
         return whileloopdata
     
@@ -669,7 +674,7 @@ class calc_fncs:
 
         """
         data = data.dropna()
-        drop_condn = data[(data['206Pb/238U'] == 0) | (data['207Pb/235U'] == 0) | (data['207Pb/206Pb'] == 0)].index
+        drop_condn = data[(data['206Pb/238U'] == 0) | (data['207Pb/206Pb'] == 0)].index
         data.drop(drop_condn,inplace=True)
         data = data.reset_index(drop=True)
         
@@ -760,7 +765,7 @@ class plots(calc_fncs):
         data_to_regress = data[(data.Time_s >= ablation_slider[0]) & (data.Time_s <= ablation_slider[1])] # get the selected ablation period
         
         if displayframe == 'main':
-            height,width=500,700
+            height,width=500,600
         else:
             height,width=500,500
         
@@ -824,7 +829,7 @@ class plots(calc_fncs):
         data = calc_fncs.get_ratios(data) # get calculated ratios from the data
         data_to_regress = data[(data.Time_s >= ablation_slider[0]) & (data.Time_s <= ablation_slider[1])] # get the selected ablation period
         
-        fig = figure(height=500,width=700,title='207Pb/206Pb',tools='pan,reset,save,wheel_zoom,xwheel_zoom,ywheel_zoom',toolbar_location='above',
+        fig = figure(height=500,width=600,title='207Pb/206Pb',tools='pan,reset,save,wheel_zoom,xwheel_zoom,ywheel_zoom',toolbar_location='above',
                      x_axis_label='Time (s)',
                      y_range=[min(data_to_regress['207Pb/206Pb'])-0.04,max(data_to_regress['207Pb/206Pb'])+0.04],
                      x_range=[min(data.Time_s),max(data.Time_s)])
@@ -916,7 +921,7 @@ class plots(calc_fncs):
         data = calc_fncs.get_ratios(data)
         data = data[(data.Time_s >= start_ablation) & (data.Time_s <= stop_ablation)]
         data = data.dropna()
-        drop_condn = data[(data['206Pb/238U'] == 0) | (data['207Pb/235U'] == 0) | (data['207Pb/206Pb'] == 0)].index
+        drop_condn = data[(data['206Pb/238U'] == 0) | (data['207Pb/206Pb'] == 0)].index
         data.drop(drop_condn,inplace=True)
         # ell1p,ell2p,ell3p = calc_fncs.get_ellipse(data, power)
         ell1p,ell2p = calc_fncs.get_ellipse(data, power, ablation_start_true, regression_buttons, counts_mode)
