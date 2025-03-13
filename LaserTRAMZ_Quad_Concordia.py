@@ -1951,7 +1951,7 @@ class finalize_ages(param.Parameterized):
         output_secondary_df = self.output_secondary_data
         if self.outputdataformat == 'Simple':
             cols_to_drop = ['measurementindex','t start','t end','t project','b start','b end','206Pb/238U 1st Order','206Pb/238U Exp.','207Pb/235U 1st Order','207Pb/235U Exp.',
-                            '238U/235U','SE% 206Pb/238U 1st Order','SE% 206Pb/238U Exp','SE% 207Pb/235U 1st Order','SE% 207Pb/235U Exp','Weth C','Weth Wid1','Weth Wid2','TW C','TW Wid1','TW Wid2',
+                            '238U/235U','SE% 206Pb/238U 1st Order','SE% 206Pb/238U Exp','SE% 207Pb/235U 1st Order','SE% 207Pb/235U Exp'
                             'Sample','Sample Analysis Number','238U/206Pb err','206Pb/238U_age_init','207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb','SK 207Pb/206Pb',
                             'frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std','tims_age_207','tims_error_std_207','avg_std_ratio','avg_std_ratio_207','avg_std_ratio_Thcrct',
                             'avg_reg_err','avg_reg_err_207','Epsilon 207Pb/206Pb','Epsilon 206Pb/238U','238U/206Pb_corrected','207Pb/235U_corrected','counts_pb206r','206Pb/238Upbc_numerical','206Pb/238U Age 1s (meas)'
@@ -1971,6 +1971,7 @@ class finalize_ages(param.Parameterized):
                                     '[U] µg/g','[Th] µg/g','[Th/U]','f206','206Pb/204Pb','SE% 206Pb/204Pb','238U/235U c','SE% 238U/235U',
                                     '206Pb/238U','238U/206Pb','206Pb/238U c','238U/206Pb c','SE 206Pb/238U','SE% 206Pb/238U','207Pb/235U','207Pb/235U c','SE 207Pb/235U',
                                     '207Pb/206Pb','207Pb/206Pb c','207Pb/206Pbr','SE 207Pb/206Pb','SE% 207Pb/206Pb',
+                                    'Weth C','Weth Wid1','Weth Wid2','TW C','TW Wid1','TW Wid2',
                                     '207Pb/235U Age','207Pb/235U Age 1s','206Pb/238U Age','206Pb/238U Age 1s'
                                     ]
                                    ]
@@ -1981,7 +1982,7 @@ class finalize_ages(param.Parameterized):
             
         if self.outputdataformat == 'Annotated Output':
             cols_to_drop = ['measurementindex','t start','t end','t project','b start','b end',
-                            '238U/235U','SE% 206Pb/238U 1st Order','SE% 206Pb/238U Exp','SE% 207Pb/235U 1st Order','SE% 207Pb/235U Exp','Weth C','Weth Wid1','Weth Wid2','TW C','TW Wid1','TW Wid2',
+                            '238U/235U','SE% 206Pb/238U 1st Order','SE% 206Pb/238U Exp','SE% 207Pb/235U 1st Order','SE% 207Pb/235U Exp',
                             '238U/206Pb err','206Pb/238U_age_init','207Pb/235U_age_init','SK 206Pb/204Pb','SK 207Pb/204Pb',
                             'frac_factor_206238','frac_factor_207235','tims_age_std','tims_error_std','tims_age_207','tims_error_207','avg_std_ratio','avg_std_ratio_207','avg_std_ratio_Thcrct',
                             'avg_reg_err','avg_reg_err_207','238U/206Pb_corrected','207Pb/235U_corrected','counts_pb206r','206Pb/238Upbc_numerical',
