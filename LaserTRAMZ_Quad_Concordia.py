@@ -695,97 +695,44 @@ class calc_fncs:
         wtd_76_ax.tick_params(axis='x', labelsize=6)
         wtd_76_ax.tick_params(axis='y', labelsize=6)
         
+        wtd_638,wtd_638_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'206Pb/238U c','206Pb/238U Reg. err')
+        wtd_76,wtd_76_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'207Pb/206Pb c','SE 207Pb/206Pb')
         
-        if drift_selector == 'By Age':
-            block_start_index = 0 # needs to be implemented into for loop
-            for i in range(0,int(len(RM_isotope_ratio_uncertainty_df)/drift_nearest)):
-                RM_isotope_ratio_uncertainty_df_block = RM_isotope_ratio_uncertainty_df.loc[block_start_index:block_start_index+(drift_nearest-1)]
-                wtd_638,wtd_638_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df_block,'206Pb/238U c','206Pb/238U Reg. err')
-                wtd_76,wtd_76_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df_block,'207Pb/206Pb c','SE 207Pb/206Pb')
-                
-                if calc_RM_ratio_errors == 'Primary Raw Ratios':
-                    pass
-                else:
-                    wtd_age,wtd_age_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df_block,'206Pb/238U Age','206Pb/238U Age 1s (tot)')
-                    wtd_age_ax.fill_between([min(RM_isotope_ratio_uncertainty_df_block['measurementindex']),max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])], (wtd_age/1e6-wtd_age_SE/1e6), (wtd_age/1e6+wtd_age_SE/1e6), facecolor='teal', alpha=0.2)
-                    wtd_age_ax.plot([min(RM_isotope_ratio_uncertainty_df_block['measurementindex']),max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])],[wtd_age/1e6,wtd_age/1e6],'-',color='k',lw=0.5)
-                    wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['206Pb/238U Age']/1e6,
-                                        yerr=RM_isotope_ratio_uncertainty_df_block['206Pb/238U Age 1s (meas) epi']*2/1e6,fmt='none',ecolor='r',lw=0.5)
-                    wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['206Pb/238U Age']/1e6,
-                                        yerr=RM_isotope_ratio_uncertainty_df_block['206Pb/238U Age 1s (meas)']*2/1e6,fmt='none',ecolor='k',lw=0.5)
-                    wtd_age_ax.plot(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['206Pb/238U Age']/1e6,'d',mec='k',mfc='yellow',lw=0)
-                    wtd_age_ylim_block = wtd_age_ax.get_ylim()
-                    wtd_age_ax.plot([max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])+3],[wtd_age_ylim_block[0],wtd_age_ylim_block[1]],'-.k',lw=1)
-                
-                
-                wtd_638_ax.fill_between([min(RM_isotope_ratio_uncertainty_df_block['measurementindex']),max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])], (wtd_638-wtd_638_SE), (wtd_638+wtd_638_SE), facecolor='teal', alpha=0.2)
-                wtd_638_ax.plot([min(RM_isotope_ratio_uncertainty_df_block['measurementindex']),max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])],[wtd_638,wtd_638],'-',color='k',lw=0.5)
-                wtd_638_ax.errorbar(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['206Pb/238U c'],
-                                    yerr=RM_isotope_ratio_uncertainty_df_block['206Pb/238U Reg. err epi']*2,fmt='none',ecolor='r',lw=0.5)
-                wtd_638_ax.errorbar(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['206Pb/238U c'],
-                                    yerr=RM_isotope_ratio_uncertainty_df_block['206Pb/238U Reg. err']*2,fmt='none',ecolor='k',lw=0.5)
-                wtd_638_ax.plot(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['206Pb/238U c'],'d',mec='k',mfc='yellow',lw=0)
-                wtd_638_ylim_block = wtd_638_ax.get_ylim()
-                wtd_638_ax.plot([max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])+3],[wtd_638_ylim_block[0],wtd_638_ylim_block[1]],'-.k',lw=1)
-                
-                
-                wtd_76_ax.fill_between([min(RM_isotope_ratio_uncertainty_df_block['measurementindex']),max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])], (wtd_76-wtd_76_SE), (wtd_76+wtd_76_SE), facecolor='teal', alpha=0.2)
-                wtd_76_ax.plot([min(RM_isotope_ratio_uncertainty_df_block['measurementindex']),max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])],[wtd_76,wtd_76],'-',color='k',lw=0.5)
-                wtd_76_ax.errorbar(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['207Pb/206Pb c'],
-                                    yerr=RM_isotope_ratio_uncertainty_df_block['SE 207Pb/206Pb epi']*2,fmt='none',ecolor='r',lw=0.5)
-                wtd_76_ax.errorbar(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['207Pb/206Pb c'],
-                                    yerr=RM_isotope_ratio_uncertainty_df_block['SE 207Pb/206Pb']*2,fmt='none',ecolor='k',lw=0.5)
-                wtd_76_ax.plot(RM_isotope_ratio_uncertainty_df_block['measurementindex'],RM_isotope_ratio_uncertainty_df_block['207Pb/206Pb c'],'d',mec='k',mfc='yellow',lw=0)
-                wtd_76_ylim_block = wtd_76_ax.get_ylim()
-                wtd_76_ax.plot([max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df_block['measurementindex'])+3],[wtd_76_ylim_block[0],wtd_76_ylim_block[1]],'-.k',lw=1)
-                
-                block_start_index = block_start_index + drift_nearest
-                
-            return wtd_age_fig,wtd_638_fig,wtd_76_fig
-                
-                
-        elif drift_selector == 'None':
-            wtd_638,wtd_638_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'206Pb/238U c','206Pb/238U Reg. err')
-            wtd_76,wtd_76_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'207Pb/206Pb c','SE 207Pb/206Pb')
-        
-            if calc_RM_ratio_errors == 'Primary Raw Ratios':
-                pass
-            else:
-                wtd_age,wtd_age_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'206Pb/238U Age','206Pb/238U Age 1s (tot)')
-                wtd_age_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_age/1e6-wtd_age_SE/1e6), (wtd_age/1e6+wtd_age_SE/1e6), facecolor='teal', alpha=0.2)
-                wtd_age_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_age/1e6,wtd_age/1e6],'-',color='k',lw=0.5)
-                wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U Age']/1e6,
-                                    yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Age 1s (meas) epi']*2/1e6,fmt='none',ecolor='r')
-                wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U Age']/1e6,
-                                    yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Age 1s (meas)']*2/1e6,fmt='none',ecolor='k')
-                wtd_age_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U Age']/1e6,'d',mec='k',mfc='yellow',lw=0)
-                wtd_age_ylim = wtd_age_ax.get_ylim()
-                wtd_age_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_age_ylim[0],wtd_age_ylim[1]],'--k',lw=2)
-            
-            wtd_638_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_638-wtd_638_SE), (wtd_638+wtd_638_SE), facecolor='teal', alpha=0.2)
-            wtd_638_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_638,wtd_638],'-',color='k',lw=0.5)
-            wtd_638_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U c'],
-                                yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Reg. err epi']*2,fmt='none',ecolor='r')
-            wtd_638_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U c'],
-                                yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Reg. err']*2,fmt='none',ecolor='k')
-            wtd_638_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U c'],'d',mec='k',mfc='yellow',lw=0)
-            wtd_638_ylim = wtd_638_ax.get_ylim()
-            wtd_638_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_638_ylim[0],wtd_638_ylim[1]],'--k',lw=2)
-            
-            wtd_76_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_76-wtd_76_SE), (wtd_76+wtd_76_SE), facecolor='teal', alpha=0.2)
-            wtd_76_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_76,wtd_76],'-',color='k',lw=0.5)
-            wtd_76_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['207Pb/206Pb c'],
-                                yerr=RM_isotope_ratio_uncertainty_df['SE 207Pb/206Pb epi']*2,fmt='none',ecolor='r')
-            wtd_76_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['207Pb/206Pb c'],
-                                yerr=RM_isotope_ratio_uncertainty_df['SE 207Pb/206Pb']*2,fmt='none',ecolor='k')
-            wtd_76_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['207Pb/206Pb c'],'d',mec='k',mfc='yellow',lw=0)
-            wtd_76_ylim = wtd_76_ax.get_ylim()
-            wtd_76_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_76_ylim[0],wtd_76_ylim[1]],'--k',lw=2)
-                
-            return wtd_age_fig,wtd_638_fig,wtd_76_fig
-            
-        else:
+        if calc_RM_ratio_errors == 'Primary Raw Ratios':
             pass
+        else:
+            wtd_age,wtd_age_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'206Pb/238U Age','206Pb/238U Age 1s (tot)')
+            wtd_age_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_age/1e6-wtd_age_SE/1e6), (wtd_age/1e6+wtd_age_SE/1e6), facecolor='teal', alpha=0.2)
+            wtd_age_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_age/1e6,wtd_age/1e6],'-',color='k',lw=0.5)
+            wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U Age']/1e6,
+                                yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Age 1s (meas) epi']*2/1e6,fmt='none',ecolor='r')
+            wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U Age']/1e6,
+                                yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Age 1s (meas)']*2/1e6,fmt='none',ecolor='k')
+            wtd_age_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U Age']/1e6,'d',mec='k',mfc='yellow',lw=0)
+            # wtd_age_ylim = wtd_age_ax.get_ylim()
+            # wtd_age_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_age_ylim[0],wtd_age_ylim[1]],'--k',lw=2)
+        
+        wtd_638_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_638-wtd_638_SE), (wtd_638+wtd_638_SE), facecolor='teal', alpha=0.2)
+        wtd_638_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_638,wtd_638],'-',color='k',lw=0.5)
+        wtd_638_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U c'],
+                            yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Reg. err epi']*2,fmt='none',ecolor='r')
+        wtd_638_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U c'],
+                            yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Reg. err']*2,fmt='none',ecolor='k')
+        wtd_638_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['206Pb/238U c'],'d',mec='k',mfc='yellow',lw=0)
+        # wtd_638_ylim = wtd_638_ax.get_ylim()
+        # wtd_638_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_638_ylim[0],wtd_638_ylim[1]],'--k',lw=2)
+        
+        wtd_76_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_76-wtd_76_SE), (wtd_76+wtd_76_SE), facecolor='teal', alpha=0.2)
+        wtd_76_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_76,wtd_76],'-',color='k',lw=0.5)
+        wtd_76_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['207Pb/206Pb c'],
+                            yerr=RM_isotope_ratio_uncertainty_df['SE 207Pb/206Pb epi']*2,fmt='none',ecolor='r')
+        wtd_76_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['207Pb/206Pb c'],
+                            yerr=RM_isotope_ratio_uncertainty_df['SE 207Pb/206Pb']*2,fmt='none',ecolor='k')
+        wtd_76_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['207Pb/206Pb c'],'d',mec='k',mfc='yellow',lw=0)
+        # wtd_76_ylim = wtd_76_ax.get_ylim()
+        # wtd_76_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_76_ylim[0],wtd_76_ylim[1]],'--k',lw=2)
+            
+        return wtd_age_fig,wtd_638_fig,wtd_76_fig
         
 
     def correct_standard_ages(df, std_txt, Pb_Th_std_crct_selector, regression_selector, common_207206_input):
@@ -1363,7 +1310,7 @@ class calc_fncs:
         
         for i in range(0,len(data)):
             x = data.loc[i,variable]
-            err = data.loc[i,error]
+            err = data.loc[i,error]*2
             tosum_MSWD.append((x-np.mean(data[variable]))**2/(err**2))
         summed_MSWD = np.sum(tosum_MSWD)
         MSWD = 1/(len(data)-1)*summed_MSWD
@@ -1815,9 +1762,9 @@ class finalize_ages(param.Parameterized):
                 # if drift treatment requested, check if correcting by ZRM. If so, get the requested nearest number and use those to correct data
             if self.drift_selector != 'None':
                 if self.drift_selector == 'By Age':
-                    for i in range(0,len(chosen_secondary_data)):
-                        nearest_stds = chosen_std.iloc[(chosen_std['measurementindex']-chosen_secondary_data.loc[i,'measurementindex']).abs().argsort()[:self.drift_nearest_amount]] # get nearest standards
-                        if self.calc_RM_ratio_errors == 'Secondary Age':
+                    if self.calc_RM_ratio_errors == 'Secondary Age':
+                        for i in range(0,len(chosen_secondary_data)):
+                            nearest_stds = chosen_std.iloc[(chosen_std['measurementindex']-chosen_secondary_data.loc[i,'measurementindex']).abs().argsort()[:self.drift_nearest_amount]] # get nearest standards
                             epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(chosen_secondary_data, self.regression_selector, self.calc_RM_ratio_errors)
                             chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']/100*chosen_secondary_data.loc[i,'207Pb/206Pb c']
                             chosen_secondary_data.loc[i,'Epsilon 207Pb/206Pb'] = epi
@@ -1830,7 +1777,9 @@ class finalize_ages(param.Parameterized):
                                 chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
                             chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data.loc[i,'206Pb/238U Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi']/chosen_secondary_data.loc[i,'206Pb/238U_unc'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                             RM_isotope_ratio_data = chosen_secondary_data
-                        elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
+                    elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
+                        for i in range(0,len(chosen_secondary_data)):
+                            nearest_stds = chosen_std.iloc[(chosen_std['measurementindex']-chosen_secondary_data.loc[i,'measurementindex']).abs().argsort()[:self.drift_nearest_amount]] # get nearest standards
                             epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(chosen_secondary_data, self.regression_selector, self.calc_RM_ratio_errors)
                             chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']/100*chosen_secondary_data.loc[i,'207Pb/206Pb c']
                             chosen_secondary_data.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
@@ -1843,9 +1792,11 @@ class finalize_ages(param.Parameterized):
                                 chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] + epipb206u238*chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
                             else:
                                 chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
-                            chosen_secondary_data.loc[i,'206Pb/238U Age 1s (mea.) epi'] = chosen_secondary_data.loc[i,'206Pb/238U Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err']/chosen_secondary_data.loc[i,'206Pb/238U_unc'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']/100)**2)**(1/2)
+                            chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data.loc[i,'206Pb/238U Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi']/chosen_secondary_data.loc[i,'206Pb/238U_unc'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                             RM_isotope_ratio_data = chosen_secondary_data
-                        elif self.calc_RM_ratio_errors == 'Primary Raw Ratios':
+                    elif self.calc_RM_ratio_errors == 'Primary Raw Ratios':
+                        for i in range(0,len(chosen_std)):
+                            nearest_stds = chosen_std.iloc[(chosen_std['measurementindex']-chosen_std.loc[i,'measurementindex']).abs().argsort()[:self.drift_nearest_amount]] # get nearest standards
                             epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(nearest_stds, self.regression_selector, self.calc_RM_ratio_errors)
                             chosen_std.loc[i,'SE 207Pb/206Pb'] = chosen_std.loc[i,'SE% 207Pb/206Pb']/100*chosen_std.loc[i,'207Pb/206Pb']
                             chosen_std.loc[i,'Epsilon 207Pb/206Pb'] = epipb207pb206
