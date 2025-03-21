@@ -100,9 +100,16 @@ Running the script for Part Two will open up a page in your default web browser.
 * Accept Reduction Parameters: Click this value to accept all your inputs
 
 ### Descriptions of GUI visualization and tools
-Type a sample name into the Text sample selector box. The input only needs to be part of a sample name (e.g., typing 91500 will pull up all analyses that have "91500" in them). You can change the input [Th/U] concentrations of zircon and melt using the boxes on the left. 
-By default the common Pb correction uses the Stacey-Kramers model. If you have an estimate for the common 207Pb/206Pb ratio and its error you may input these in the appropriate boxes on the left.
+Type a sample name into the Text sample selector box. The input only needs to be part of a sample name (e.g., typing 91500 will pull up all analyses that have "91500" in them). You can change the input [Th/U] concentrations of zircon and melt using the boxes on the left. After doing so, you should get a screen that looks like the following:
+
+<img width="939" alt="Screenshot 2025-03-20 at 3 37 30 PM" src="https://github.com/user-attachments/assets/be6f18fc-b11b-40b1-95e1-868ff9ec5e50" />
+
+
+* By default the common Pb correction uses the Stacey-Kramers model. If you have an estimate for the common 207Pb/206Pb ratio and its error you may input these in the appropriate boxes on the left.
 Tera-Waserburg and Wetherhill Concordia can be visualized by selecting the tabs at the top. Limits to the Concordia plots can be changed using the slider or highlighting the numbers above the sliders and typing a number.
+* The Concordia plot can be toggled from Tera-Waserburg to Wetherhill. By default the Stacey-Kramers model is used for the common Pb correction and the resultant ages are those projected onto Concordia from Common Pb through the data point. Common Pb ratios can be changed in the input on the left, as can the Th-disequilibrium parameters.
+* The drift plot currently has some bugs and is mostly useful to load data first without drift correcting in order to assess how severe the drift is.
+* The excess variance plot shows the ages (for secondary standard options) and ratios of standard data used to calculate excess variance. Black bars are 2s. Red is the additional excess variance.
 
 ## Final Output Information
 * t start, t end, t project / bstart, bend: The ablation & background start, end, and projected value.
