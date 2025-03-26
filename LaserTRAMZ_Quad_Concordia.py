@@ -117,12 +117,12 @@ TIMS_errors = {
 
 
 # set up a map that maps variables to a dropdown of labels that are easier to read and understand
-drift_variable_map = {'206Pb/238U Age': ['206Pb/238U Age','206Pb/238U_age_init'],'207Pb/235U Age': ['207Pb/235U Age','207Pb/235U_age_init'],
-                      '206Pb/238U': ['206Pb/238U c','206Pb/238U_unc'],'207Pb/235U': ['207Pb/235U_corrected','207Pb/235U'],'238U/235U': ['238U/235U c','238U/235U'],
-                      '207Pb/206Pb: By Measured Mass Bias': ['207Pb/206Pb c','207Pb/206Pb'],
-                      '207Pb/206Pb: By Age': ['207Pb/206Pbr','207Pb/206Pb']
+drift_variable_map = {'206Pb/238U Age': ['206Pb/238U Age'],'207Pb/235U Age': ['207Pb/235U Age'],
+                      '206Pb/238U Uncorrected': ['206Pb/238U_unc'], '206Pb/238U Corrected': ['206Pb/238U c'],
+                      '207Pb/206Pb Uncorrected': ['207Pb/206Pb'], '207Pb/206Pb Corrected': ['207Pb/206Pb c'],
+                      '207Pb/235U Uncorrected': ['207Pb/235U'], '207Pb/235U Corrected': ['207Pb/235U c'],
+                      '238U/235U Uncorrected': ['238U/235U'], '238U/235U Corrected': ['238U/235U c']
                       }
-
 # %%
 
 
@@ -652,14 +652,12 @@ class calc_fncs:
         fig.xgrid.grid_line_color = 'darkgray'
         fig.ygrid.grid_line_color = 'darkgray'
         drift_var_mapped = drift_variable_map.get(drift_var)[0]
-        uncrct_drift_var_mapped = drift_variable_map.get(drift_var)[1]
         secondary_stds = secondary_list
         for s in range(0,len(secondary_list)):
             secondary_std_s = secondary_df[secondary_df['Sample'] == secondary_stds[s]]
             secondary_std_s = secondary_std_s.reset_index(drop=True)
-            secondary_std_s['fracfactor'] = secondary_std_s[drift_var_mapped]/secondary_std_s[uncrct_drift_var_mapped]
             xvals = secondary_std_s['measurementindex']
-            yvals = secondary_std_s['fracfactor']
+            yvals = secondary_std_s[drift_var_mapped]
             fig.diamond(xvals,yvals,size=10,color=color_palette[s],legend_label=str(secondary_std_s['Sample'][0]))
         
         return fig
@@ -825,12 +823,8 @@ class calc_fncs:
 
         # append the calculations to the sample dataframe
         df['207Pb/206Pbr'] = pts_pb_r
-        # get the concordant 7/6 ratio for the accepted standard age
-        std_concardant_76 = stds_dict.get(std_txt)[4]
-        # get the fractionation factor on the 7/6 ratio from the standard measurements and the accepted values
-        zrm_pb_f = np.log(std_concardant_76/np.mean(df['207Pb/206Pb']))/np.log(mass_dict.get('207Pb')/mass_dict.get('206Pb'))
-        # reassign variable
-        fracfactor_76 = zrm_pb_f
+        # get the average concordant 207Pb/206Pb ratio of standards
+        avg_std_concordant76 = np.mean(df['207Pb/206Pbr'])
         # assign dataframe f
         df['f'] = f
 
@@ -855,7 +849,7 @@ class calc_fncs:
         avg_reg_err = np.mean(df['206Pb/238U Reg. err'])
         avg_reg_err_207 = np.mean(df['207Pb/235U Reg. err'])
 
-        return avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UThstd, UTh_std_m, fracfactor_76
+        return avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UThstd, UTh_std_m, avg_std_concordant76
     
     
     
@@ -920,9 +914,10 @@ class calc_fncs:
                         nearest_secondary_stds = df_secondary.iloc[(df_secondary['measurementindex']-df.loc[i,'measurementindex']).abs().argsort()[:drift_nearest]] # get nearest standards
                         std_set_i = nearest_stds # variable change
                         # get the fractionation factors and standard statistics
-                        frac_factor, frac_factor_207, fracfactor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std_set_i, std_txt, Pb_Th_std_crct_selector, regression_selector, common_207206_input)
+                        frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std_set_i, std_txt, Pb_Th_std_crct_selector, regression_selector, common_207206_input)
                         df.loc[i,'frac_factor_206238'] = frac_factor # 6/38 fractionation factor
                         df.loc[i,'frac_factor_207235'] = frac_factor_207 # 7/35 fractionation factor
+                        df['frac_factor_207206'] = frac_factor_76
                         df.loc[i,'tims_age_std'] = tims_age # standard accepted age from TIMS
                         df.loc[i,'tims_error_std'] = tims_error # standard accepted age error from TIMS
                         df.loc[i,'tims_age_207'] = tims_age_207 # standard accepted 7/35 age age from TIMS
@@ -976,9 +971,10 @@ class calc_fncs:
                     pass
                             
             else:
-                frac_factor, frac_factor_207, fracfactor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std, std_txt, Pb_Th_std_crct_selector, regression_selector, common_207206_input)
+                frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std, std_txt, Pb_Th_std_crct_selector, regression_selector, common_207206_input)
                 df['frac_factor_206238'] = frac_factor
                 df['frac_factor_207235'] = frac_factor_207
+                df['frac_factor_207206'] = frac_factor_76
                 df['tims_age_std'] = tims_age
                 df['tims_error_std'] = tims_error
                 df['tims_age_207'] = tims_age_207
@@ -1032,6 +1028,8 @@ class calc_fncs:
             
             df['238U/206Pb_corrected'] = 1/((1/df['238U/206Pb'])*df['frac_factor_206238']) # 38/6 bias corrected ratio
             df['207Pb/235U_corrected'] = df['207Pb/235U']*df['frac_factor_207235'] # 7/35 bias corrected artio
+            df['207Pb/206Pb c'] = df['207Pb/206Pb c']*df['frac_factor_207206']
+            
         except KeyboardInterrupt:
             print('Interrupted Age Calculations')
         
@@ -1286,7 +1284,7 @@ class calc_fncs:
 
         """
         # correct standard ages, get frac factors, etc
-        avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m, fracfactor_76 = \
+        avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m, avg_std_concordant76 = \
             calc_fncs.correct_standard_ages(std, std_txt, Pb_Th_std_crct_selector, regression_selector, common_207206_input)
         tims_age = accepted_ages.get(std_txt)[0] # get accepted from dictionary
         tims_error = TIMS_errors.get(std_txt)[0]
@@ -1295,13 +1293,15 @@ class calc_fncs:
         std_accpt_ratio_207 = np.exp(tims_age_207*lambda_235)-1 # calculate accepted ratio
         frac_factor_207 = std_accpt_ratio_207/avg_std_ratio_207 # get frac factor. Very rudimentary at this stage
         std_accpt_ratio = np.exp(tims_age*lambda_238)-1 # calculate accepted ratio from TIMS accepted age
+        std_concordant_76 = stds_dict.get(std_txt)[4] # get the concordant 7/6 ratio for the accepted standard age
+        frac_factor_76 = std_concordant_76/avg_std_concordant76
 
         if Pb_Th_std_crct_selector == 'Common Pb':
             frac_factor = std_accpt_ratio/avg_std_ratio
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
             frac_factor = std_accpt_ratio/avg_std_ratio_Thcrct
 
-        return frac_factor, frac_factor_207, fracfactor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m
+        return frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m
 
     
     def mswd(data,variable,error):
@@ -1420,9 +1420,12 @@ class finalize_ages(param.Parameterized):
     output_secondary_data = param.DataFrame(precedence=-1)
     regression_selector = param.Selector(objects=['1st Order', 'Exp', 'Total Counts'],precedence=-1)
     calc_RM_ratio_errors = param.Selector(objects=['Secondary Age', 'Secondary Normalized Ratios', 'Primary Raw Ratios'],precedence=-1)
-    drift_analyte_dropdown = param.Selector(default='206Pb/238U',objects=['206Pb/238U Age','207Pb/235U Age',
-                                                                          '206Pb/238U','207Pb/235U','238U/235U',
-                                                                          '207Pb/206Pb: By Measured Mass Bias','207Pb/206Pb: By Age'])
+    drift_analyte_dropdown = param.Selector(default='206Pb/238U Age',objects=['206Pb/238U Age','207Pb/235U Age',
+                                                                              '206Pb/238U Uncorrected','206Pb/238U Corrected',
+                                                                              '207Pb/206Pb Uncorrected','207Pb/206Pb Corrected',
+                                                                              '207Pb/235U Uncorrected','207Pb/235U Corrected',
+                                                                              '238U/235U Uncorrected','238U/235U Corrected'
+                                                                              ])
     
     x_axis_TW = param.Range(default=(0,25),bounds=(0,10000))
     y_axis_TW = param.Range(default=(0,0.3),bounds=(0,1))
@@ -1988,7 +1991,7 @@ widgets={'label_toggle': pn.widgets.CheckBoxGroup,
          'UTh_std_norm': pn.widgets.RadioBoxGroup}
 
 
-fastgrid_layout = pn.template.VanillaTemplate(title='LaserTRAMZ Concordia: LA-ICP-MC-MS',
+fastgrid_layout = pn.template.VanillaTemplate(title='LaserTRAMZ Concordia: LA-Q-ICP-MS',
                                                 sidebar=pn.Column(pn.WidgetBox(pn.Param(reduce_ages.param,widgets=widgets))),sidebar_width=380)
 
 fastgrid_layout.modal.append(pn.Row())
