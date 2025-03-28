@@ -1,8 +1,11 @@
 # LaserTRAMZ
-
+____________
 ## Purpose
 LaserTRAMZ was written to provide a free, non-automated open-source program to handle time resolved U-Pb zircon analyses gathered via LA-Q-ICP-MS. This is effectively the sister to [LaserTRAM-DB](https://github.com/jlubbersgeo/laserTRAM-DB#readme) ([Lubbers et al., 202x](https://doi.org/10.5281/zenodo.7826697)) which was built for handling trace elements using the same instrumentation.
-
+____________
+## Reference flowchart for repeat users that don't necessarily need to read the details below
+[LaserTRAMZ_Reduction_Flowchart.pdf](https://github.com/user-attachments/files/19507746/LaserTRAMZ_Reduction_Flowchart.pdf)
+____________
 ## Data Input Format
 ### Part 1: Analyte Reduction
 
@@ -44,7 +47,7 @@ Primary and validation standards have a required naming scheme in order to be re
 | NIST-614          | Woodhead and Hergt, 2007 / Duffin et al., 2015  | NIST-614             |
 | NIST-612          | Woodhead and Hergt, 2007 / Duffin et al., 2015  | NIST-614             |
 | NIST-610          | Woodhead and Hergt, 2007 / Duffin et al., 2015  | NIST-614             |
-
+____________
 ## Part One: Analyte Reduction
 Running the script for Part One will open a page in your default web browser with a grey column and some default selections. `Copy + Paste` the file path to your LT_ready file into the bottom string input. After some loading time, an empty data table will pop up and the dropdown titled `Sample Subset` will be populated with the analyses in the file. Select one of these (it does not auto populate) and the program will load the data onto the screen:
 
@@ -73,7 +76,7 @@ The fitted regressions for the Pb/U ratios are shown in the top left graph. Resi
 
 ### Exporting Data
 Click the DDDT! button to export.
-
+____________
 ## Part Two: Age Reduction
 ### Uploading and Setting reduction options
 Running the script for Part Two will open up a page in your default web browser. Copy and Paste the filepath from part one into the file path input at the top of the sidebar. A window will pop up that looks like the following:
@@ -111,6 +114,15 @@ Tera-Waserburg and Wetherhill Concordia can be visualized by selecting the tabs 
 * The drift plot currently has some bugs and is mostly useful to load data first without drift correcting in order to assess how severe the drift is.
 * The excess variance plot shows the ages (for secondary standard options) and ratios of standard data used to calculate excess variance. Black bars are 2s. Red is the additional excess variance.
 
+#### The following standards have published concentrations for U and Th. Note Plesovice is not included due to the known heterogeneity (Slama et al., 2008). Choosing a standard(s) that does not have published concentrations and selecting an option that includes that (those) standard(s) to estimate concentrations will result in erroneous concentration estimations for unknowns (values set to 1e-7 in the script to avoid divide by zero errors).
+* Temora
+* Fish Canyon
+* R33
+* 91500
+* FC1
+* Oracle
+* OG1
+____________
 ## Final Output Information
 * t start, t end, t project / bstart, bend: The ablation & background start, end, and projected value.
 * Analytes (e.g., 206Pb, 238U) and analyte errors (e.g., 206Pb_1SE, 238U_1SE): Mean background subtracted intensities and 1*Standard errors for each analyte.
@@ -120,10 +132,10 @@ Tera-Waserburg and Wetherhill Concordia can be visualized by selecting the tabs 
 * Pb/U ratio 'Age': Age in years
 * Pb/U Age 1s (meas.): 1s analytical error on the age in years
 * Pb/U Age 1s (tot): 1s full error on the age in year
-
+____________
 ## Caveats
 You need to have columns for 202Hg, 204-208Pb, 232Th, 235U, 238U for the program to run; largely due to the way I wrote the program initially and I haven't gotten around to changing this yet. If you need these columns to be input into the data there is a .ipynb file in the repository that can be used to input these columns provided you are familiar with python. I am also happy to do this for you if you reach out by email.
-  
+____________
 ## Installation and Use
 We recommend running the program through [Anaconda](https://www.anaconda.com/download). You may also need to download [Git](https://github.com/git-guides/install-git).  After downloading, one may clone the repository by opening their terminal or Anconda prompt and running the following lines (one by one). It is best to create a virtual environment, which is included in the code block below:
 
@@ -156,18 +168,18 @@ To shut down the virtual environemnt, run the following:
 ```
 conda deactivate LaserTRAMZ
 ```
-
+____________
 ## Demos
 (https://www.youtube.com/watch?v=683U5F1hsdM&list=PLs1w2r4kCIlWRb5ARSq0PzIfl4XBUQuaG)
-
+____________
 ## Feedback and Questions
 Feecback and suggestions may be made by opening an [issue](https://github.com/Lewisc2/LaserTRAMZ/issues) or emailing Chuck Lewis (lewisc2 _at_ oregonstate.edu). I'm happy to answer any questions that may come up.
-
+____________
 ## Citing and Related Documentation
 If you use LaserTRAMZ in your work, please citte it! See citation.cff file for citing information. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8097362.svg)](https://doi.org/10.5281/zenodo.8097362)
 
 - Publication coming `soon`!
-
+____________
 ## References
 ```
 Black, L.P. et al., 2004, Improved 206Pb/238U microprobe geochronology by the monitoring of a trace-element-related matrix effect; SHRIMP, ID–TIMS, ELA–ICP–MS and oxygen isotope documentation for a series of zircon standards: Chemical Geology, v. 205, p. 115–140, doi:10.1016/j.chemgeo.2004.01.003.
