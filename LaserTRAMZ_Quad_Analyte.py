@@ -490,8 +490,23 @@ class calc_fncs:
             return predicted_to_return,predicted_to_return_207,resid_to_return,resid_to_return_207
         
         elif callingmethod == 'get_ellipse':
-            predicted_to_return = [predicted1,predictedexp]
-            predicted_to_return_207 = [predicted1_207,predictedexp_207]
+            predicted1_ellipse = resid1 + fit1.params[0]
+            predicted1_207_ellipse = resid1_207 + fit1_207.params[0]
+            if 'Exp. Regression' in regression_buttons:
+                if curve638 == 'extra variable':
+                    predictedexp_ellipse = residexp + popt[0] + popt[2]
+                else:
+                    predictedexp_ellipse = residexp + popt[0]
+                if curve735 == 'extra variable':
+                    predictedexp_207_ellipse = residexp_207 + popt_207[0] + popt_207[2]
+                else:
+                    predictedexp_207_ellipse = residexp_207 + popt_207[0]
+            else:
+                predictedexp_ellipse = np.zeros_like(data['Time'])
+                predictedexp_207_ellipse = np.zeros_like(data['Time'])
+            
+            predicted_to_return = [predicted1_ellipse,predictedexp_ellipse]
+            predicted_to_return_207 = [predicted1_207_ellipse,predictedexp_207_ellipse]
             
             return predicted_to_return,predicted_to_return_207
         
@@ -601,7 +616,7 @@ class calc_fncs:
         # 202Hg: 29.86%, 204Hg: 6.87% https://www.nndc.bnl.gov/nudat3/
         Hgratio = (6.87/100) / (29.86/100)
     
-        Weth_ellparams,TW_ellparams = calc_fncs.get_ellipse(ellipse_data_toapprove,power,ablation_start_true,regression_buttons,counts_mode)
+        Weth_ellparams,TW_ellparams,x1,y1,y2 = calc_fncs.get_ellipse(ellipse_data_toapprove,power,ablation_start_true,regression_buttons,counts_mode)
         
         # turn lists into dataframe to get joined into one large dataframe that gets sent to the output data
         Weth_ellparams = pd.DataFrame([Weth_ellparams],columns=['Weth C','Weth Wid1','Weth Wid2','Weth rho'])
@@ -715,7 +730,7 @@ class calc_fncs:
         ell1_params = [c1,wid1,hgt1,theta1]
         ell2_params = [c2,wid2,hgt2,theta2]
         
-        return ell1_params,ell2_params
+        return ell1_params,ell2_params,x1,y1,y2
         
         
 class plots(calc_fncs):
@@ -924,7 +939,7 @@ class plots(calc_fncs):
         drop_condn = data[(data['206Pb/238U'] == 0) | (data['207Pb/206Pb'] == 0)].index
         data.drop(drop_condn,inplace=True)
         # ell1p,ell2p,ell3p = calc_fncs.get_ellipse(data, power)
-        ell1p,ell2p = calc_fncs.get_ellipse(data, power, ablation_start_true, regression_buttons, counts_mode)
+        ell1p,ell2p,pbu735,pbu638,pbpb76 = calc_fncs.get_ellipse(data, power, ablation_start_true, regression_buttons, counts_mode)
         
         ell1 = Ellipse(xy=ell1p[0],width=ell1p[1],height=ell1p[2],angle=ell1p[3],color='steelblue',ec='k',alpha=0.5) # set the parameters into a plotable 'patch'
         ell2 = Ellipse(xy=ell2p[0],width=ell2p[1],height=ell2p[2],angle=ell2p[3],color='steelblue',ec='k',alpha=0.5)
@@ -934,9 +949,9 @@ class plots(calc_fncs):
         ax2 = fig2.add_subplot()
         
         ax1.add_artist(ell1) # adde the ellipsoid patch to the axis
-        ax1.plot(data['207Pb/235U'],data['206Pb/238U'],'ok',markersize=1) # plot individual observations as dots
+        ax1.plot(pbu735,pbu638,'.k',markersize=1) # plot individual observations as dots
         ax2.add_artist(ell2)
-        ax2.plot(1/data['206Pb/238U'],data['207Pb/206Pb'],'ok',markersize=1)
+        ax2.plot(1/pbu638,pbpb76,'.k',markersize=1)
         
         ax1.set_xlabel('$^{207}$Pb/$^{235}$U',fontsize=6) # set xlabel
         ax1.set_ylabel('$^{206}$Pb/$^{238}$U',fontsize=6) # set ylabel
@@ -957,7 +972,7 @@ class plots(calc_fncs):
             ax2.set_xlim(0,0.5) # set reasonable x and y limits based on the size of the patch
             ax2.set_ylim(0,0.5)
         
-        fig1.tight_layout() # get it right keep it tight
+        fig1.tight_layout() 
         fig2.tight_layout()
         
         return fig1,fig2
