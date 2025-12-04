@@ -1,0 +1,7 @@
+*.xlsx
+*.csv
+*.xlsm
+*.xls
+*.xlsb
+*.cfg
+venv/
