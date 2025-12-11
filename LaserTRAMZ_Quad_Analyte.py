@@ -77,6 +77,7 @@ class calc_fncs:
             ablation.loc[:,analyte] = outlier_removed_ablation
             
         meanbackgrounds = backgrounds.loc[:,'202Hg':'238U'].mean()
+        sebackgrounds = backgrounds.loc[:,'202Hg':'238U'].std()/np.sqrt(len(backgrounds))
         lods = 3*backgrounds.loc[:,'202Hg':'238U'].std()
         ablation_backsub = ablation.loc[:,'202Hg':'238U'].sub(meanbackgrounds,axis='columns').clip(lower=0)
         ablation_backsub.insert(0,'Time_s',data['Time_s'])
@@ -88,7 +89,7 @@ class calc_fncs:
             else:
                 pass
             
-        return ablation_backsub,meanbackgrounds,lods
+        return ablation_backsub,meanbackgrounds,sebackgrounds,lods
     
     
     def get_tresolved_ratios(data):
@@ -151,7 +152,7 @@ class calc_fncs:
     
     
     
-    def get_mean_ratios(data,ratiotype):
+    def get_mean_ratios(data,ratiotype,isotopes_means,isotopes_full_SE):
         """
         Function used to get reduced isotope ratios of data. Values are done with either ratio of means method or geometric mean
         Uncertainties are calculated according to selection  - standard error of time resolved ratio or geometric standard error of time resolved ratio
@@ -170,29 +171,52 @@ class calc_fncs:
             dataframe with reduced ratios and uncertainties in 1SE%
 
         """
+        
+        # note that on peak SEs are commented out - new uncertainty propagation is done by propagating uncertainties of individual isotopes to get correct covariances
+        data=data.reset_index(drop=True)
+        isotopes_full_SD = isotopes_full_SE*np.sqrt(len(data))
+        # get covariances for isotope ratios of same element
+        # could prove to self that the unbiased estimate of the covariance comes out of this by calculating manually E[(x-E(x))(y-E(y))]
+        covar76 = np.cov(data['207Pb'],data['206Pb'])[0,1]
+        covar74 = np.cov(data['207Pb'],data['204Pb'])[0,1]
+        covar64 = np.cov(data['206Pb'],data['204Pb'])[0,1]
+        covar85 = np.cov(data['238U'],data['235U'])[0,1]
         if ratiotype == 'Ratio of Means':
-            mu_206Pb238U = np.mean(data['206Pb'])/np.mean(data['238U']) if np.mean(data['238U'])>0 else 0
-            se_206Pb238U = 0 if mu_206Pb238U==0 else np.std(np.divide(data['206Pb'].astype(float),data['238U'].astype(float),out=np.zeros_like(data['238U'].astype(float)),where=data['238U'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
-            mu_238U206Pb = np.mean(data['238U'])/np.mean(data['206Pb']) if np.mean(data['206Pb'])>0 else 0
-            se_238U206Pb = 0 if mu_238U206Pb==0 else np.std(np.divide(data['238U'].astype(float),data['206Pb'].astype(float),out=np.zeros_like(data['238U'].astype(float)),where=data['206Pb'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+            mu_206Pb238U = np.mean(data['206Pb'])/np.mean(data['238U']) if np.mean(data['238U'])>0 else 0.0
+            se_206Pb238U = 0.0 if mu_206Pb238U==0.0 else mu_206Pb238U*np.sqrt((isotopes_full_SD['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SD['238U_1SE']/isotopes_means['238U'])**2)[0]/np.sqrt(len(data))
+            # se_206Pb238U = 0 if mu_206Pb238U==0 else np.std(np.divide(data['206Pb'].astype(float),data['238U'].astype(float),out=np.zeros_like(data['238U'].astype(float)),where=data['238U'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+            mu_238U206Pb = np.mean(data['238U'])/np.mean(data['206Pb']) if np.mean(data['206Pb'])>0 else 0.0
+            se_238U206Pb = 0.0 if mu_238U206Pb==0.0 else mu_238U206Pb*np.sqrt((isotopes_full_SD['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SD['238U_1SE']/isotopes_means['238U'])**2)[0]/np.sqrt(len(data))
+            # se_238U206Pb = 0 if mu_238U206Pb==0 else np.std(np.divide(data['238U'].astype(float),data['206Pb'].astype(float),out=np.zeros_like(data['238U'].astype(float)),where=data['206Pb'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
             try:
                 mu_207Pb235U = np.mean(data['207Pb'])/np.mean(data['235U']) if np.mean(data['235U'])>0 else np.mean(data['207Pb'])/np.mean(data['238U']/137.818)
-                se_207Pb235U = np.std(np.divide(data['207Pb'].astype(float),data['238U'].to_numpy()/137.818,out=np.zeros_like(data['238U'].astype(float)),where=data['238U'].astype(float)!=0),ddof=1)/np.sqrt(len(data)) if np.mean(data['235U'])<=0 else np.std(np.divide(data['207Pb'].astype(float),data['235U'].astype(float),out=np.zeros_like(data['235U'].astype(float)),where=data['235U'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+                se_207Pb235U = mu_207Pb235U*np.sqrt((isotopes_full_SD['235U_1SE']/isotopes_means['235U'])**2 + (isotopes_full_SD['207Pb_1SE']/isotopes_means['207Pb'])**2)[0]/np.sqrt(len(data)) if np.mean(data['235U'])>0 else mu_207Pb235U*np.sqrt((isotopes_full_SD['238U_1SE']/isotopes_means['238U'])**2 + (isotopes_full_SD['207Pb_1SE']/isotopes_means['207Pb'])**2)[0]/np.sqrt(len(data))
+                # se_207Pb235U = np.std(np.divide(data['207Pb'].astype(float),data['238U'].to_numpy()/137.818,out=np.zeros_like(data['238U'].astype(float)),where=data['238U'].astype(float)!=0),ddof=1)/np.sqrt(len(data)) if np.mean(data['235U'])<=0 else np.std(np.divide(data['207Pb'].astype(float),data['235U'].astype(float),out=np.zeros_like(data['235U'].astype(float)),where=data['235U'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
             except:
-                mu_207Pb235U = 0
-                se_207Pb235U = 0
-            mu_208Pb232Th = np.mean(data['208Pb'])/np.mean(data['232Th']) if np.mean(data['232Th'])>0 else 0
-            se_208Pb232Th = 0 if mu_208Pb232Th==0 else np.std(np.divide(data['208Pb'].astype(float),data['232Th'].astype(float),out=np.zeros_like(data['232Th'].astype(float)),where=data['232Th'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
-            mu_207Pb206Pb = np.mean(data['207Pb'])/np.mean(data['206Pb']) if np.mean(data['206Pb'])>0 else 0
-            se_207Pb206Pb = 0 if mu_207Pb206Pb==0 else np.std(np.divide(data['207Pb'].astype(float),data['206Pb'].astype(float),out=np.zeros_like(data['206Pb'].astype(float)),where=data['206Pb'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
-            mu_207Pb204Pb = np.mean(data['207Pb'])/np.mean(data['204Pb']) if np.mean(data['204Pb'])>0 else 0
-            se_207Pb204Pb = 0 if mu_207Pb204Pb==0 else np.std(np.divide(data['207Pb'].astype(float),data['204Pb'].astype(float),out=np.zeros_like(data['204Pb'].astype(float)),where=data['204Pb'].astype(float)!=0))/np.sqrt(len(data))
-            mu_206Pb204Pb = np.mean(data['206Pb'])/np.mean(data['204Pb']) if np.mean(data['204Pb'])>0 else 0
-            se_206Pb204Pb = 0 if mu_206Pb204Pb==0 else np.std(np.divide(data['206Pb'].astype(float),data['204Pb'].astype(float),out=np.zeros_like(data['204Pb'].astype(float)),where=data['204Pb'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
-            mu_238U232Th = np.mean(data['238U'])/np.mean(data['232Th']) if np.mean(data['232Th'])>0 else 0
-            se_238U232Th = 0 if mu_238U232Th==0 else np.std(np.divide(data['238U'].astype(float),data['232Th'].astype(float),out=np.zeros_like(data['232Th'].astype(float)),where=data['232Th'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+                mu_207Pb235U = 0.0
+                se_207Pb235U = 0.0
+            mu_208Pb232Th = np.mean(data['208Pb'])/np.mean(data['232Th']) if np.mean(data['232Th'])>0 else 0.0
+            se_208Pb232Th = 0.0 if mu_208Pb232Th==0.0 else mu_208Pb232Th*np.sqrt((isotopes_full_SD['208Pb_1SE']/isotopes_means['208Pb'])**2 + (isotopes_full_SD['232Th_1SE']/isotopes_means['232Th'])**2)[0]/np.sqrt(len(data))
+            # se_208Pb232Th = 0 if mu_208Pb232Th==0 else np.std(np.divide(data['208Pb'].astype(float),data['232Th'].astype(float),out=np.zeros_like(data['232Th'].astype(float)),where=data['232Th'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+            mu_207Pb206Pb = np.mean(data['207Pb'])/np.mean(data['206Pb']) if np.mean(data['206Pb'])>0 else 0.0
+            se_207Pb206Pb = 0.0 if mu_207Pb206Pb==0.0 else mu_207Pb206Pb*np.sqrt((isotopes_full_SD['207Pb_1SE']/isotopes_means['207Pb'])**2 + (isotopes_full_SD['206Pb_1SE']/isotopes_means['206Pb'])**2 -
+                                                                                 2 * covar76 / (isotopes_means['207Pb']*isotopes_means['206Pb']))[0]/np.sqrt(len(data))
+            # se_207Pb206Pb = 0 if mu_207Pb206Pb==0 else np.std(np.divide(data['207Pb'].astype(float),data['206Pb'].astype(float),out=np.zeros_like(data['206Pb'].astype(float)),where=data['206Pb'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+            mu_207Pb204Pb = np.mean(data['207Pb'])/np.mean(data['204Pb']) if np.mean(data['204Pb'])>0 else 0.0
+            se_207Pb204Pb = 0.0 if mu_207Pb204Pb==0.0 else mu_207Pb204Pb*np.sqrt((isotopes_full_SD['207Pb_1SE']/isotopes_means['207Pb'])**2 + (isotopes_full_SD['204Pb_1SE']/isotopes_means['204Pb'])**2 -
+                                                                                 2 * covar74 / (isotopes_means['207Pb']*isotopes_means['204Pb']))[0]/np.sqrt(len(data))
+            # se_207Pb204Pb = 0 if mu_207Pb204Pb==0 else np.std(np.divide(data['207Pb'].astype(float),data['204Pb'].astype(float),out=np.zeros_like(data['204Pb'].astype(float)),where=data['204Pb'].astype(float)!=0))/np.sqrt(len(data))
+            mu_206Pb204Pb = np.mean(data['206Pb'])/np.mean(data['204Pb']) if np.mean(data['204Pb'])>0 else 0.0
+            se_206Pb204Pb = 0.0 if mu_206Pb204Pb==0.0 else mu_206Pb204Pb*np.sqrt((isotopes_full_SD['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SD['204Pb_1SE']/isotopes_means['204Pb'])**2 -
+                                                                                 2 * covar64 / (isotopes_means['206Pb']*isotopes_means['204Pb']))[0]/np.sqrt(len(data))
+            # se_206Pb204Pb = 0 if mu_206Pb204Pb==0 else np.std(np.divide(data['206Pb'].astype(float),data['204Pb'].astype(float),out=np.zeros_like(data['204Pb'].astype(float)),where=data['204Pb'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+            mu_238U232Th = np.mean(data['238U'])/np.mean(data['232Th']) if np.mean(data['232Th'])>0 else 0.0
+            se_238U232Th = 0.0 if mu_238U232Th==0.0 else mu_238U232Th*np.sqrt((isotopes_full_SD['238U_1SE']/isotopes_means['238U'])**2 + (isotopes_full_SD['232Th_1SE']/isotopes_means['232Th'])**2)[0]/np.sqrt(len(data))
+            # se_238U232Th = 0 if mu_238U232Th==0 else np.std(np.divide(data['238U'].astype(float),data['232Th'].astype(float),out=np.zeros_like(data['232Th'].astype(float)),where=data['232Th'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
             mu_238U235U = np.mean(data['238U'])/np.mean(data['235U']) if np.mean(data['235U'])>0 else 137.818
-            se_238U235U = 137.818 if mu_238U235U==0 else np.std(np.divide(data['238U'].astype(float),data['235U'].astype(float),out=np.zeros_like(data['235U'].astype(float)),where=data['235U'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
+            se_238U235U = 137.818 if mu_238U235U==0.0 else mu_238U235U*np.sqrt((isotopes_full_SD['238U_1SE']/isotopes_means['238U'])**2 + (isotopes_full_SD['235U_1SE']/isotopes_means['235U'])**2 -
+                                                                               2 * covar85 / (isotopes_means['238U']*isotopes_means['235U']))[0]/np.sqrt(len(data))
+            # se_238U235U = 137.818 if mu_238U235U==0 else np.std(np.divide(data['238U'].astype(float),data['235U'].astype(float),out=np.zeros_like(data['235U'].astype(float)),where=data['235U'].astype(float)!=0),ddof=1)/np.sqrt(len(data))
             
         elif ratiotype == 'Geometric':
             mu_206Pb238U = stats.gmean(np.divide(data['206Pb'].astype(float),data['238U'].astype(float),out=np.ones_like(data['238U'].astype(float)),where=(data['238U'].astype(float)>0) & (data['206Pb'].astype(float)>0))) if np.mean(data['238U'])>0 else 0
@@ -475,11 +499,19 @@ class calc_fncs:
 
         """
         data_toapprove = data.reset_index(drop=True) # reset the index of the data so that it can be altered/indexed appropriately
-        counts_data,backgrounds,lods = calc_fncs.backgroundsubtract_convert_lod(data_toapprove,bstart,bend,tstart,tend,arrayofdwelltimes) # background subtracted counts, mean background intensities
+        counts_data,backgrounds,sebackgrounds,lods = calc_fncs.backgroundsubtract_convert_lod(data_toapprove,bstart,bend,tstart,tend,arrayofdwelltimes) # background subtracted counts, mean background intensities
         counts_data = counts_data.fillna(0) # fill any na values with zero in case 'ends' of data has nans after masking for outlier removal
-        mean_ratios = calc_fncs.get_mean_ratios(counts_data,ratio_type) # mean ratios - either ratio of means or geometric depending on user input
-        t_resolved_ratios = calc_fncs.get_tresolved_ratios(counts_data) # get time resovled ratios of the ablation interval
         
+        isotopes_SE = pd.DataFrame([counts_data.loc[:,'202Hg':'238U'].sem()]) # get SEs of analytes during ablation interval
+        isotopes_full_SE = ((sebackgrounds)**2 + (isotopes_SE)**2)**(1/2) # propagate in uncertainty of background
+        isotopes_full_SE = isotopes_full_SE.add_suffix('_1SE') # add _1SE suffix to column headers
+        isotopes_full_SE.loc[:,'204Pb_1SE'] = ((isotopes_full_SE.loc[:,'204Pb_1SE'])**2 + (isotopes_full_SE.loc[:,'202Hg_1SE'])**2)**(1/2) # propagate 202Hg uncertainty into 204Pb uncertainty due to isobaric interference correction - subtraction happens below
+        isotopes_means = pd.DataFrame([counts_data.loc[:,'202Hg':'238U'].mean()]) # put means of isotopic values in a dataframe
+        
+        
+        t_resolved_ratios = calc_fncs.get_tresolved_ratios(counts_data) # get time resovled ratios of the ablation interval
+        mean_ratios = calc_fncs.get_mean_ratios(counts_data,ratio_type,isotopes_means,isotopes_full_SE) # mean ratios - either ratio of means or geometric depending on user input
+        # get ratios
         if counts_mode == 'Total Counts':
             mean_ratios = mean_ratios
             
@@ -489,27 +521,36 @@ class calc_fncs:
                 mean_ratios['206Pb/238U'] = data_ratios_reg[0]
                 mean_ratios['238U/206Pb'] = 1/data_ratios_reg[0]
                 mean_ratios['207Pb/235U'] = data_ratios_reg[2]
-                mean_ratios['SE% 206Pb/238U'] = data_stats_reg[0]
-                mean_ratios['SE% 238U/206Pb'] = data_stats_reg[0]
-                mean_ratios['SE% 207Pb/235U'] = data_stats_reg[2]
+                se206pb238U = data_ratios_reg[0] * np.sqrt((data_stats_reg[0]/100)**2 + (isotopes_full_SE['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SE['238U_1SE']/isotopes_means['238U'])**2)
+                mean_ratios['SE% 206Pb/238U'] = se206pb238U / data_ratios_reg[0]*100
+                # mean_ratios['SE% 206Pb/238U'] = data_stats_reg[0]
+                se238U206pb = 1/data_ratios_reg[0] * np.sqrt((data_stats_reg[0]/100)**2 + (isotopes_full_SE['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SE['238U_1SE']/isotopes_means['238U'])**2)
+                mean_ratios['SE% 238U/206Pb'] = se238U206pb/(1/data_ratios_reg[0])*100
+                # mean_ratios['SE% 238U/206Pb'] = data_stats_reg[0]
+                se207pb235u = data_ratios_reg[2] * np.sqrt((data_stats_reg[2]/100)**2 + (isotopes_full_SE['207Pb_1SE']/isotopes_means['207Pb'])**2 + (isotopes_full_SE['235U_1SE']/isotopes_means['235U'])**2 )
+                mean_ratios['SE% 207Pb/235U'] = se207pb235u/data_ratios_reg[2]*100
+                # mean_ratios['SE% 207Pb/235U'] = data_stats_reg[2]
             else:
                 mean_ratios['206Pb/238U'] = data_ratios_reg[1]
                 mean_ratios['238U/206Pb'] = 1/data_ratios_reg[1]
                 mean_ratios['207Pb/235U'] = data_ratios_reg[3]
-                mean_ratios['SE% 206Pb/238U'] = data_stats_reg[1]
-                mean_ratios['SE% 238U/206Pb'] = data_stats_reg[1]
-                mean_ratios['SE% 207Pb/235U'] = data_stats_reg[3]
+                se206pb238U = data_ratios_reg[1] * np.sqrt((data_stats_reg[1]/100)**2 + (isotopes_full_SE['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SE['238U_1SE']/isotopes_means['238U'])**2)
+                mean_ratios['SE% 206Pb/238U'] = se206pb238U/data_ratios_reg[1]*100
+                # mean_ratios['SE% 206Pb/238U'] = data_stats_reg[1]
+                se238U206pb = 1/data_ratios_reg[1] * np.sqrt((data_stats_reg[1]/100)**2 + (isotopes_full_SE['206Pb_1SE']/isotopes_means['206Pb'])**2 + (isotopes_full_SE['238U_1SE']/isotopes_means['238U'])**2)
+                mean_ratios['SE% 238U/206Pb'] = se238U206pb/(1/data_ratios_reg[1])*100
+                # mean_ratios['SE% 238U/206Pb'] = data_stats_reg[1]
+                se207pb235u = data_ratios_reg[3] * np.sqrt((data_stats_reg[3]/100)**2 + (isotopes_full_SE['207Pb_1SE']/isotopes_means['207Pb'])**2 + (isotopes_full_SE['235U_1SE']/isotopes_means['235U'])**2)
+                mean_ratios['SE% 207Pb/235U'] = se207pb235u/data_ratios_reg[3]*100
+                # mean_ratios['SE% 207Pb/235U'] = data_stats_reg[3]
 
-
-        isotopes_SE = pd.DataFrame([counts_data.loc[:,'202Hg':'238U'].sem()]).add_suffix('_1SE') # get SE's of the individual isotopes
-        isotopes_means = pd.DataFrame([counts_data.loc[:,'202Hg':'238U'].mean()]) # put means of isotopic values in a dataframe
     
         Weth_ellparams,TW_ellparams,x1,y1,y2 = calc_fncs.get_ellipse(t_resolved_ratios,power,tproject,regression_buttons) # get confidence ellipse paramters
         # turn lists into dataframe to get joined into one large dataframe that gets sent to the output data
         Weth_ellparams = pd.DataFrame([Weth_ellparams],columns=['Weth C','Weth Wid1','Weth Wid2','Weth rho'])
         TW_ellparams = pd.DataFrame([TW_ellparams],columns=['TW C','TW Wid1','TW Wid2','TW rho'])
         
-        # take the means of the individual isotopes and run them through a for loop with the detection limits. Assign a value of 'bdl' if below detection limit. Otherwise, leave unchanged
+        # compare means of the individual isotopes with the detection limits in a for loop. Assign a value of 'bdl' if below detection limit. Otherwise, leave unchanged
         for analyte in isotopes_means.loc[:,'202Hg':'238U'].columns:
             if isotopes_means.loc[0,analyte]<=lods[analyte]:
                 isotopes_means.loc[0,analyte]='bdl'
@@ -543,7 +584,7 @@ class calc_fncs:
         isotopes_means.insert(6,'b end',[bend])
         # stitch the individual isotopic ratios, their errors, and ellipsoid information into a dataframe
         # these are then appeneded into the output df
-        data_approved = isotopes_means.join([isotopes_SE,mean_ratios,Weth_ellparams,TW_ellparams])
+        data_approved = isotopes_means.join([isotopes_full_SE,mean_ratios,Weth_ellparams,TW_ellparams])
         
         
         ratio_cols = ['206Pb/238U','238U/206Pb','207Pb/235U','208Pb/232Th','207Pb/206Pb','207Pb/204Pb','206Pb/204Pb','238U/232Th','238U/235U']
@@ -994,7 +1035,7 @@ class make_plots(param.Parameterized):
             self.ablation_start_true = self.ablation_slider[0]
             
         data_toevaluate = self.input_data[self.input_data['SampleLabel'] == self.sample_subset].reset_index(drop=True)
-        counts_data,backgrounds,lods = calc_fncs.backgroundsubtract_convert_lod(data_toevaluate,self.background_slider[0],self.background_slider[1],self.ablation_slider[0],self.ablation_slider[1],self.arrayofdwelltimes)
+        counts_data,backgrounds,sebackgrounds,lods = calc_fncs.backgroundsubtract_convert_lod(data_toevaluate,self.background_slider[0],self.background_slider[1],self.ablation_slider[0],self.ablation_slider[1],self.arrayofdwelltimes)
         counts_data = counts_data.fillna(0)
         t_resolved_ratios = calc_fncs.get_tresolved_ratios(counts_data) # get time resovled ratios of the ablation interval
         

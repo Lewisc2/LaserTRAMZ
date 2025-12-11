@@ -5,3 +5,4 @@
 *.xlsb
 *.cfg
 venv/
+testing.py
