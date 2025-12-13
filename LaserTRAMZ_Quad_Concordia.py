@@ -45,14 +45,14 @@ SK74_2sig = 0.3
 SK64_2sig = 1
 
 # values from Woodhead and Hergt, 2001
-pb_bias_dict = {'NIST-610':{'206Pb/204Pb': 17.047,'207Pb/204Pb': 15.509,'208Pb/204Pb': 36.975,'207Pb/206Pb': 0.9098},
-                'NIST-612':{'206Pb/204Pb': 17.094,'207Pb/204Pb': 15.510,'208Pb/204Pb': 37.000,'207Pb/206Pb': 0.9073},
-                'NIST-614':{'206Pb/204Pb': 17.833,'207Pb/204Pb': 15.533,'208Pb/204Pb': 37.472,'207Pb/206Pb': 0.8710}
+pb_bias_dict = {'NIST-610':{'206Pb/204Pb': [17.047,0.0018/2],'207Pb/204Pb': [15.509,0.001/2],'208Pb/204Pb': [36.975,0.0026/2],'207Pb/206Pb': [0.9098,0.00006]},
+                'NIST-612':{'206Pb/204Pb': [17.094,0.0026],'207Pb/204Pb': [15.510,0.0036],'208Pb/204Pb': [37.000,0.0094],'207Pb/206Pb': [0.9073,0.0003]},
+                'NIST-614':{'206Pb/204Pb': [17.833,0.0134],'207Pb/204Pb': [15.533,0.0066],'208Pb/204Pb': [37.472,0.0214],'207Pb/206Pb': [0.8710,0.0008]}
                 }
 # values from Duffin et al., 2015
-u_bias_dict = {'NIST-610':{'238U/235U': 419.4992},
-               'NIST-612':{'238U/235U': 418.2650},
-               'NIST-614':{'238U/235U': 374.4964}
+u_bias_dict = {'NIST-610':{'238U/235U': [419.4992,0.0882]},
+               'NIST-612':{'238U/235U': [418.2650,0.0877]},
+               'NIST-614':{'238U/235U': [374.4964,0.2109]}
                }
 # 'true' isotope masses
 mass_dict = {'238U': 238.050788427,
@@ -1103,7 +1103,7 @@ class calc_fncs:
                 df['207Pb/206Pb c'] = df['207Pb/206Pb c']*df['frac_factor_207206']
             
         except KeyboardInterrupt:
-            print('Interrupted Age Calculations')
+            pn.state.notifications.error('Interrupted Age Calculations',duration=2000)
         
         pb_m = df['207Pb/206Pb c']
         common_filter = np.zeros(len(df))
@@ -1336,7 +1336,7 @@ class calc_fncs:
                 if Pbcmethod == '207Pb':
                     dagetot = np.abs(df['Concordant Age'])*(((df['tims_error_std']/2)/df['tims_age_std'])**2 + (df['avg_reg_err']/df['avg_std_ratio'])**2 +
                                                             (df['206Pb/238U Reg. err']/(df['206Pb/238U']))**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                            ((SK74_2sig/2)/df.loc[m,'SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df.loc[m,'SK 206Pb/204Pb'])**2 +
+                                                            ((SK74_2sig/2)/df['SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 +
                                                             (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
                     dagetot_list = dagetot
                 elif Pbcmethod =='204Pb':
@@ -1821,8 +1821,6 @@ class finalize_ages(param.Parameterized):
         self.DThU_treatment = DThU_treatment
         self.outputdataformat = outputdataformat
         
-        print('Chosen Pb Correction Method')
-        print(Pbcmethod)
         
         self.input_data['206Pb/238U_unc'] = self.input_data['206Pb/238U']
         self.input_data['206Pb/238U Reg. err'] = self.input_data['SE% 206Pb/238U']*self.input_data['206Pb/238U']/100
@@ -1831,36 +1829,45 @@ class finalize_ages(param.Parameterized):
         self.input_data['206Pb/238U_age_init'] = np.log((1/self.input_data['238U/206Pb']) + 1) / lambda_238
         self.input_data['207Pb/235U_age_init'] = np.log(self.input_data['207Pb/235U'] + 1) / lambda_235
         self.input_data['SE 207Pb/206Pb'] = self.input_data['SE% 207Pb/206Pb']/100 * self.input_data['207Pb/206Pb']
+        self.input_data['SE 206Pb/204Pb'] = self.input_data['SE% 206Pb/204Pb']/100 * self.input_data['206Pb/204Pb']
+        self.input_data['SE 238U/235U'] = self.input_data['SE% 238U/235U']/100 * self.input_data['238U/235U']
         self.output_data = pd.DataFrame([np.zeros(len(self.input_data.columns))], columns=list(self.input_data.columns))
             
         if mass_bias_pb != 'By Age':
-            pb_bias_std = mass_bias_pb
-            pb_bias_std_df = self.input_data[self.input_data['Sample'] == pb_bias_std]
+            pb_bias_std = mass_bias_pb # get standard used to calculate mass bias
+            pb_bias_std_df = self.input_data[self.input_data['Sample'] == pb_bias_std] # put all those standards into a df
             pb_bias_std_df = pb_bias_std_df.reset_index(drop=True)
-            high_mass_pb,low_mass_pb = pb_bias_ratio.split('/')
-            high_mass_pb_wt = mass_dict.get(high_mass_pb)
-            low_mass_pb_wt = mass_dict.get(low_mass_pb)
-            accepted_pb = pb_bias_dict[pb_bias_std][pb_bias_ratio]
-            pb_f = np.log(accepted_pb/np.mean(pb_bias_std_df[pb_bias_ratio]))/np.log(high_mass_pb_wt/low_mass_pb_wt)
-            if high_mass_pb == '207Pb' and low_mass_pb == '206Pb':
-                self.input_data['207Pb/206Pb c'] = self.input_data['207Pb/206Pb']*(high_mass_pb_wt/low_mass_pb_wt)**pb_f
-                accepted_pb_64 = pb_bias_dict[pb_bias_std]['206Pb/204Pb']
-                m206 = mass_dict.get('206Pb')
-                m204 = mass_dict.get('204Pb')
-                pb_f_64 = pb_f = np.log(accepted_pb_64/np.mean(pb_bias_std_df['206Pb/204Pb']))/np.log(m206/m204)
-                self.input_data['206Pb/204Pb c'] = self.input_data['206Pb/204Pb']*(m206/m204)**pb_f_64
-            else:
-                self.input_data['207Pb/206Pb c'] = self.input_data['207Pb/206Pb']*(high_mass_pb_wt/low_mass_pb_wt)**pb_f
-                accepted_pb_64 = pb_bias_dict[pb_bias_std]['206Pb/204Pb']
-                m206 = mass_dict.get('206Pb')
-                m204 = mass_dict.get('204Pb')
-                pb_f_64 = pb_f = np.log(accepted_pb_64/np.mean(pb_bias_std_df['206Pb/204Pb']))/np.log(m206/m204)
-                self.input_data['206Pb/204Pb c'] = self.input_data['206Pb/204Pb']*(m206/m204)**pb_f_64
-            print('Pb Bias Calculated Externally')
+            mean_pb_bias_std_ratio  = np.mean(pb_bias_std_df[pb_bias_ratio]) # get mean of standard measurements on desired ratio
+            sigma_pb_bias_std_ratio = np.std(pb_bias_std_df[pb_bias_ratio])/np.sqrt(len(pb_bias_std_df)) # get 1SE of standard measurements on desired ratio
+            mean_pb_bias_std_64  = np.mean(pb_bias_std_df[pb_bias_ratio]) # get mean of standard measurements on 6/4 ratio
+            sigma_pb_bias_std_64 = np.std(pb_bias_std_df['206Pb/204Pb'])/np.sqrt(len(pb_bias_std_df)) # get 1SE of standard measurements on 206/204 ratio
+            high_mass_pb,low_mass_pb = pb_bias_ratio.split('/') # get high and low mass isotopes of chosen ratio (e.g., 207Pb, 206Pb)
+            high_mass_pb_wt = mass_dict.get(high_mass_pb) # high mass amu
+            low_mass_pb_wt = mass_dict.get(low_mass_pb) # low mass amu
+            accepted_pb = pb_bias_dict[pb_bias_std][pb_bias_ratio][0] # get accepted ratio for the standard
+            accepted_pb_uncertainty = pb_bias_dict[pb_bias_std][pb_bias_ratio][1] # get uncertainty on accepted ratio
+            pb_f = np.log(accepted_pb/np.mean(pb_bias_std_df[pb_bias_ratio]))/np.log(high_mass_pb_wt/low_mass_pb_wt) # calculate exponential fractionation factor
+            # calculate uncertainty of f from error propagation
+            sigma_pb_f = np.sqrt((accepted_pb_uncertainty/(np.log(high_mass_pb_wt/low_mass_pb_wt)*accepted_pb))**2 + (-sigma_pb_bias_std_ratio/(np.log(high_mass_pb_wt/low_mass_pb_wt)*mean_pb_bias_std_ratio))**2)
+            self.input_data['207Pb/206Pb c'] = self.input_data['207Pb/206Pb']*(high_mass_pb_wt/low_mass_pb_wt)**pb_f # calculate mass bias corrected 7/6
+            # calculate fully propagated uncertainty of mass bias corrected 7/6
+            self.input_data['SE 207Pb/206Pb'] = np.sqrt((high_mass_pb_wt/low_mass_pb_wt)**(2*pb_f)*self.input_data['SE 207Pb/206Pb']**2 + (self.input_data['207Pb/206Pb']*(high_mass_pb_wt/low_mass_pb_wt)**pb_f*np.log(high_mass_pb_wt/low_mass_pb_wt))**2*sigma_pb_f**2)
+            self.input_data['SE% 207Pb/206Pb'] = self.input_data['SE 207Pb/206Pb']/self.input_data['207Pb/206Pb c']*100
+            accepted_pb_64 = pb_bias_dict[pb_bias_std]['206Pb/204Pb'][0] # get accepted 6/4 ratio of standard
+            accepted_pb_64_uncertainty = pb_bias_dict[pb_bias_std]['206Pb/204Pb'][1] # get uncertainty on 6/4 ratio of standard
+            m206 = mass_dict.get('206Pb') # 206 amu
+            m204 = mass_dict.get('204Pb') # 204 amu
+            pb_f_64 = np.log(accepted_pb_64/np.mean(pb_bias_std_df['206Pb/204Pb']))/np.log(m206/m204) # get pb_f_64 frac factor
+            sigma_pb_f_64 = np.sqrt((accepted_pb_64_uncertainty/(np.log(m206/m204)*accepted_pb_64))**2 + (-sigma_pb_bias_std_64/(np.log(m206/m204)*mean_pb_bias_std_64))**2)
+            self.input_data['206Pb/204Pb c'] = self.input_data['206Pb/204Pb']*(m206/m204)**pb_f_64 # calculate mass bias corrected 6/4 ratios
+            self.input_data['SE 206Pb/204Pb'] = np.sqrt((m206/m204)**(2*pb_f_64)*self.input_data['SE 206Pb/204Pb']**2 + (self.input_data['206Pb/204Pb']*(m206/m204)**pb_f_64*np.log(high_mass_pb_wt/low_mass_pb_wt))**2*sigma_pb_f_64**2)
+            self.input_data['SE% 206Pb/204Pb'] = self.input_data['SE 206Pb/204Pb']/self.input_data['206Pb/204Pb c']*100
+            
+            pn.state.notifications.info('Pb Bias Calculated by Standard',duration=5000)
         else:
             self.input_data['207Pb/206Pb c'] = self.input_data['207Pb/206Pb']
             self.input_data['206Pb/204Pb c'] = self.input_data['206Pb/204Pb']
-            print('Pb Bias Calculated by Ages')
+            pn.state.notifications.info('Pb Bias Not Calculated',duration=5000)
 
             
         if u_bias_type != 'None':
@@ -1872,18 +1879,30 @@ class finalize_ages(param.Parameterized):
                 u_bias_std = primary_std
                 u_bias_std_df = self.input_data[self.input_data['Sample'] == u_bias_std]
                 u_bias_std_df = u_bias_std_df.reset_index(drop=True)
-                accepted_u = 137.818
+                mean_u_stds = np.mean(u_bias_std_df['238U/235U'])
+                sigma_u_stds = np.std(u_bias_std_df['238U/235U'])/np.sqrt(len(u_bias_std_df))
+                accepted_u = 137.818 # from Heiss et al. 2012
+                uncertainty_accepted_u = 0.045/2
                 u_f = np.log(accepted_u/np.mean(u_bias_std_df['238U/235U']))/np.log(high_mass_u_wt/low_mass_u_wt)
+                sigma_u_f = np.sqrt((uncertainty_accepted_u/(np.log(high_mass_u_wt/low_mass_u_wt)*accepted_u))**2 + (sigma_u_stds/(np.log(high_mass_u_wt/low_mass_u_wt)*mean_u_stds))**2)
                 self.input_data['238U/235U c'] = self.input_data['238U/235U']*(high_mass_u_wt/low_mass_u_wt)**u_f
-                print('U Bias Calculated by Standard')
+                self.input_data['SE 238U/235U'] = np.sqrt((high_mass_u_wt/low_mass_u_wt)**(2*u_f)*self.input_data['SE 238U/235U']**2 + (self.input_data['238U/235U']*(high_mass_u_wt/low_mass_u_wt)**u_f*np.log(high_mass_u_wt/low_mass_u_wt))**2*sigma_u_f**2)
+                self.input_data['SE% 238U/235U'] = self.input_data['SE 238U/235U']/self.input_data['238U/235U c']*100
+                pn.state.notifications.info('U Bias Calculated Assuming 137.818 for Primary Standard',duration=5000)
             else:
                 u_bias_std = u_bias_type
                 u_bias_std_df = self.input_data[self.input_data['Sample'] == u_bias_type]
                 u_bias_std_df = u_bias_std_df.reset_index(drop=True)
-                accepted_u = u_bias_dict[u_bias_std]['238U/235U']
+                mean_u_stds = np.mean(u_bias_std_df['238U/235U'])
+                sigma_u_stds = np.std(u_bias_std_df['238U/235U'])/np.sqrt(len(u_bias_std_df))
+                accepted_u = u_bias_dict[u_bias_std]['238U/235U'][0]
+                uncertainty_accepted_u = u_bias_dict[u_bias_std]['238U/235U'][1]
                 u_f = np.log(accepted_u/np.mean(u_bias_std_df['238U/235U']))/np.log(high_mass_u_wt/low_mass_u_wt)
+                sigma_u_f = np.sqrt((uncertainty_accepted_u/(np.log(high_mass_u_wt/low_mass_u_wt)*accepted_u))**2 + (sigma_u_stds/(np.log(high_mass_u_wt/low_mass_u_wt)*mean_u_stds))**2)
                 self.input_data['238U/235U c'] = self.input_data['238U/235U']*(high_mass_u_wt/low_mass_u_wt)**u_f
-                print('U Bias Calculated Externally')
+                self.input_data['SE 238U/235U'] = np.sqrt((high_mass_u_wt/low_mass_u_wt)**(2*u_f)*self.input_data['SE 238U/235U']**2 + (self.input_data['238U/235U']*(high_mass_u_wt/low_mass_u_wt)**u_f*np.log(high_mass_u_wt/low_mass_u_wt))**2*sigma_u_f**2)
+                self.input_data['SE% 238U/235U'] = self.input_data['SE 238U/235U']/self.input_data['238U/235U c']*100
+                pn.state.notifications.info('U Bias Calculated by Standard',duration=5000)
         
         
         if concentration_treatment == 'Primary':
@@ -2278,7 +2297,8 @@ reduce_ages = finalize_ages(name='Reduce Ages')
 
 # %% Initialize and call app
 
-pn.extension('tabulator','mathjax')
+pn.extension('tabulator','mathjax',notifications=True)
+pn.state.notifications.position = 'bottom-right'
 
 modal_button_one=pn.WidgetBox(pn.Param(reduce_ages.param.accept_reduction_parameters_button,
                                        widgets={'accept_reduction_parameters_button': pn.widgets.Button(name='Accept Reduction Parameters',button_type='success')}))
