@@ -40,6 +40,7 @@ lambda_230 = 9.158e-6 # Cheng et al. 2000
 # Errors on uraniumn decay constants from Mattionson(1987)
 lambda_238_2sig_percent = 0.16 
 lambda_235_2sig_percent = 0.21
+lambda_230_2sig_percent = 0.30
 
 SK74_2sig = 0.3
 SK64_2sig = 1
@@ -914,10 +915,13 @@ class calc_fncs:
         avg_std_ratio_207 = df['207Pb/235U c'].mean() # average 7/35 ratio from standard, corrected for common Pb
         
 
-        avg_reg_err = np.mean(df['206Pb/238U Reg. err'])
-        avg_reg_err_207 = np.mean(df['207Pb/235U Reg. err'])
+        # avg_reg_err = np.mean(df['206Pb/238U Reg. err'])
+        avg_reg_err = np.std(df['206Pb/238U_unc'])/np.sqrt(len(df))
+        # avg_reg_err_207 = np.mean(df['207Pb/235U Reg. err'])
+        avg_reg_err_207 = np.std(df['207Pb/235U'])/np.sqrt(len(df))
+        avg_err_207206 = np.std(df['207Pb/206Pb'])/np.sqrt(len(df))
 
-        return avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UThstd, UTh_std_m, avg_std_concordant76
+        return avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UThstd, UTh_std_m, avg_std_concordant76, avg_err_207206
     
     
     
@@ -970,6 +974,7 @@ class calc_fncs:
         df['avg_std_ratio_207'] = zeros_like_df
         df['avg_reg_err'] = zeros_like_df
         df['avg_reg_err_207'] = zeros_like_df
+        df['avg_err_207206'] = zeros_like_df
         # try to run the fucntion. allow user to keyboard interupt
         try:
             # if drift treatment requested, check if correcting by ZRM. If so, get the requested nearest number and use those to correct data
@@ -981,7 +986,7 @@ class calc_fncs:
                         nearest_NIST = NIST_df.iloc[(NIST_df['measurementindex']-df.loc[i,'measurementindex']).abs().argsort()[:drift_nearest]] # get nearest standards
                         std_set_i = nearest_stds # variable change to prevent premature overwriting
                         # get the fractionation factors and standard statistics
-                        frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std_set_i, std_txt, Pb_Th_std_crct_selector, common_207206_input, Pbcmethod)
+                        frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, avg_err_207206, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std_set_i, std_txt, Pb_Th_std_crct_selector, common_207206_input, Pbcmethod)
                         df.loc[i,'frac_factor_206238'] = frac_factor # 6/38 fractionation factor
                         df.loc[i,'frac_factor_207235'] = frac_factor_207 # 7/35 fractionation factor
                         df.loc[i,'frac_factor_207206'] = frac_factor_76
@@ -1001,6 +1006,7 @@ class calc_fncs:
                                 epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(nearest_secondary_stds, calc_RM_ratio_errors, mass_bias_pb, nearest_NIST)
                                 if epi > 0.001:
                                     df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epi*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
+                                    df.loc[i,'SE 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']/100*df.loc[i,'207Pb/206Pb c']
                                     df.loc[i,'206Pb/238U Reg. err'] = df.loc[i,'206Pb/238U Reg. err'] + epi*df.loc[i,'206Pb/238U Reg. err']
                                 else:
                                     pass
@@ -1011,6 +1017,7 @@ class calc_fncs:
                                 epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(nearest_secondary_stds, calc_RM_ratio_errors, mass_bias_pb, nearest_NIST)
                                 if epipb207pb206 > 0.001:
                                     df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epipb207pb206*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
+                                    df.loc[i,'SE 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']/100*df.loc[i,'207Pb/206Pb c']
                                 else:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
@@ -1024,6 +1031,7 @@ class calc_fncs:
                                 epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(std, calc_RM_ratio_errors, mass_bias_pb, nearest_NIST)
                                 if epipb207pb206 > 0.001:
                                     df.loc[i,'SE% 207Pb/206Pb'] = (df.loc[i,'SE 207Pb/206Pb'] + epipb207pb206*df.loc[i,'SE 207Pb/206Pb'])/df.loc[i,'207Pb/206Pb c']*100
+                                    df.loc[i,'SE 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']/100*df.loc[i,'207Pb/206Pb c']
                                 else:
                                     df.loc[i,'SE% 207Pb/206Pb'] = df.loc[i,'SE% 207Pb/206Pb']
                                 if epipb206u238 > 0.001:
@@ -1038,7 +1046,7 @@ class calc_fncs:
                     pass
                             
             else:
-                frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std, std_txt, Pb_Th_std_crct_selector, common_207206_input, Pbcmethod)
+                frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, avg_err_207206, UTh_std, UTh_std_m = calc_fncs.get_standard_fracfctr(std, std_txt, Pb_Th_std_crct_selector, common_207206_input, Pbcmethod)
                 df['frac_factor_206238'] = frac_factor
                 df['frac_factor_207235'] = frac_factor_207
                 df['frac_factor_207206'] = frac_factor_76
@@ -1051,6 +1059,7 @@ class calc_fncs:
                 df['avg_std_ratio_207'] = avg_std_ratio_207
                 df['avg_reg_err'] = avg_reg_err
                 df['avg_reg_err_207'] = avg_reg_err_207
+                df['avg_err_207206'] = avg_err_207206
                 if callingmethod == '_accept_reduction_parameters':
                     print('PASSED RM RATIO UNC.')
                     pass
@@ -1059,6 +1068,7 @@ class calc_fncs:
                         epi,mswd_new = calc_fncs.calc_RM_ratio_errors_iterate(df_secondary, calc_RM_ratio_errors, mass_bias_pb, NIST_df)
                         if epi > 0.001:
                             df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epi*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
+                            df['SE 207Pb/206Pb'] = df['SE% 207Pb/206Pb']/100*df['207Pb/206Pb c']
                             df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + epi*df['206Pb/238U Reg. err']
                         else:
                             pass
@@ -1069,6 +1079,7 @@ class calc_fncs:
                         epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(df_secondary, calc_RM_ratio_errors, mass_bias_pb, NIST_df)
                         if epipb207pb206 > 0.001:
                             df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epipb207pb206*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
+                            df['SE 207Pb/206Pb'] = df['SE% 207Pb/206Pb']/100*df['207Pb/206Pb c']
                         else:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
@@ -1082,6 +1093,7 @@ class calc_fncs:
                         epipb206u238, epipb207pb206, mswd_new_pb206u238, mswd_new_pb207pb206 = calc_fncs.calc_RM_ratio_errors_iterate(std, calc_RM_ratio_errors, mass_bias_pb, NIST_df)
                         if epipb207pb206 > 0.001:
                             df['SE% 207Pb/206Pb'] = (df['SE 207Pb/206Pb'] + epipb207pb206*df['SE 207Pb/206Pb'])/df['207Pb/206Pb c']*100
+                            df['SE 207Pb/206Pb'] = df['SE% 207Pb/206Pb']/100*df['207Pb/206Pb c']
                         else:
                             df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb']
                         if epipb206u238 > 0.001:
@@ -1092,15 +1104,18 @@ class calc_fncs:
                         df['Epsilon 207Pb/206Pb'] = epipb207pb206
                         df['Epsilon 206Pb/238U'] = epipb206u238
             
-            
-            df['238U/206Pb Bias Corrected'] = 1/((1/df['238U/206Pb'])*df['frac_factor_206238']) # 38/6 bias corrected ratio
-            df['206Pb/238U Bias Corrected'] = 1/df['238U/206Pb Bias Corrected']
+            df['206Pb/238U Bias Corrected'] = df['206Pb/238U_unc']*df['frac_factor_206238'] # 6/38 bias corrected ratio
+            df['238U/206Pb Bias Corrected'] = 1/df['206Pb/238U Bias Corrected'] # 38/6 bias corrected ratio
             df['207Pb/235U Bias Corrected'] = df['207Pb/235U']*df['frac_factor_207235'] # 7/35 bias corrected ratio
-            # if NIST used to calculate mass fractiationation, leave corrected values as is. Otherwise correct value by approximating 7/6 bias from zircon standard
-            if mass_bias_pb == 'By Age':
+            df['1S 206Pb/238U Bias Corrected'] = np.sqrt((df['frac_factor_206238'])**2*(df['206Pb/238U Reg. err'])**2 + (df['206Pb/238U Bias Corrected'])**2*(df['avg_reg_err'])**2)
+            df['1S 207Pb/235U Bias Corrected'] = np.sqrt((df['frac_factor_207235'])**2*(df['207Pb/235U Reg. err'])**2 + (df['207Pb/235U Bias Corrected'])**2*(df['avg_reg_err_207'])**2)
+            df['206Pb/238U Age 1s (meas)'] = df['1S 206Pb/238U Bias Corrected']
+            # if NIST used to calculate mass fractiationation, leave corrected values as is including uncertainties. Otherwise correct value by approximating 7/6 bias from zircon standard
+            if mass_bias_pb != 'By Age':
                 df['207Pb/206Pb c'] = df['207Pb/206Pb c']
             else:
                 df['207Pb/206Pb c'] = df['207Pb/206Pb c']*df['frac_factor_207206']
+                # df['SE 207Pb/206Pb'] = np.sqrt((df['frac_factor_207206'])**2*df['SE 207Pb/206Pb'] + (df['207Pb/206Pb c'])**2*(df['avg_err_207206'])**2)
             
         except KeyboardInterrupt:
             pn.state.notifications.error('Interrupted Age Calculations',duration=2000)
@@ -1111,19 +1126,30 @@ class calc_fncs:
         if common_207206_input!= 0 and common_207206_uncertainty != 0:
             common76 = df['Common 207Pb/206Pb']
             common64 = df['Common 206Pb/204Pb']
+            common76_se = df['Common 207Pb/206Pb Uncertainty']
+            common64_se = df['Common 206Pb/204Pb Uncertainty']
         else:
             common76 = df['SK 207Pb/206Pb']
             common64 = df['SK 206Pb/204Pb']
+            common76_se = common76*np.sqrt(((SK74_2sig/2)/df['SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2)
+            common64_se = df['SK 206Pb/204Pb Uncertainty']
         
         if Pb_Th_std_crct_selector == 'Common Pb':
             if Pbcmethod == '207Pb':
                 df['206Pb/238U Bias Corrected Age'] = np.log(df['206Pb/238U Bias Corrected'] + 1) / lambda_238 # 6/38 common Pb corrected age
+                df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((1/(lambda_238*(df['206Pb/238U Bias Corrected']+1)))**2*(df['1S 206Pb/238U Bias Corrected'])**2 + 
+                                                                 (-(np.log(df['206Pb/238U Bias Corrected']+1))/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((df['1S 206Pb/238U Bias Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
                 df['238U/206Pb c'] = 1 /df['206Pb/238U Bias Corrected'] # dummy so get_projections works
                 concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # concordant points from projection to common Pb and Concordia
                 df['Concordant 206Pb/238U'] = 1/concordia_238_206 # get concordant 6/38 ratio from projections
                 df['Concordant 238U/206Pb'] = 1/df['Concordant 206Pb/238U']
+                df['1S Concordant 206Pb/238U'] = df['Concordant 206Pb/238U']*np.sqrt((df['1S 206Pb/238U Bias Corrected']/df['206Pb/238U Bias Corrected'])**2 + (df['SE 207Pb/206Pb']/df['207Pb/206Pb c'])**2 + (common76_se/common76)**2)
                 df['Concordant Age'] = np.log(df['Concordant 206Pb/238U'] + 1) / lambda_238 # 6/38 common Pb corrected age
-                
+                df['1S Concordant Age'] = np.sqrt((1/(lambda_238*(df['Concordant 206Pb/238U']+1)))**2*(df['1S Concordant 206Pb/238U'])**2 + 
+                                                  (-np.log(df['Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                df['1S Concordant Age'] = np.sqrt((df['1S Concordant Age'])**2 + (df['tims_error_std']/2)**2)
+                df['206Pb/238U Age 1s (tot)'] = df['1S Concordant Age']
                 f_Pbc = (pb_m - pts_pb_r) / (common76 - pts_pb_r)
                 f_filter = np.zeros(len(common_filter))
 
@@ -1143,32 +1169,53 @@ class calc_fncs:
                 df['207Pb/206Pbr'] = zeroslikedf
                 df['206Pb/238U BiasPbc Corrected'] = zeroslikedf
                 df['238U/206Pb BiasPbc Corrected'] = zeroslikedf
+                df['1S 206Pb/238U BiasPbc Corrected'] = zeroslikedf
                 df['Concordant 206Pb/238U'] = zeroslikedf
                 df['Concordant 238U/206Pb'] = zeroslikedf
+                df['1S Concordant 206Pb/238U'] = zeroslikedf
                 df['Concordant Age'] = zeroslikedf
+                df['1S Concordant Age'] = zeroslikedf
                 df['Common Pb Correction'] = zeroslikedf
                 df['238U/206Pb c'] = 1 /df['206Pb/238U Bias Corrected'] # dummy so get_projections works
                 concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # concordant points from projection to common Pb and Concordia - needed to pass into loop
                 for m in range(0,len(df)):
                     if df.loc[m,'204Pb'] > 0:
-                        f_Pbc = df.loc[m,'SK 206Pb/204Pb']/df.loc[m,'206Pb/204Pb c']
+                        f_Pbc = common64[m]/df.loc[m,'206Pb/204Pb c']
                         df.loc[m,'f_Pbc'] = f_Pbc
                         df.loc[m,'207Pb/206Pbr'] = pb_m[m] - pb_m[m]*f_Pbc # note that when 204 corrected, the radiogenic ratio won't be used to reproject onto Concordia rn
                         df.loc[m,'206Pb/238U BiasPbc Corrected'] = df.loc[m,'206Pb/238U Bias Corrected']-(df.loc[m,'206Pb/238U Bias Corrected']*df.loc[m,'f_Pbc'])
+                        df.loc[m,'1S 206Pb/238U BiasPbc Corrected'] = np.sqrt((df.loc[m,'frac_factor_206238']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'206Pb/238U Reg. err'])**2 + 
+                                                                              (df.loc[m,'206Pb/238U Bias Corrected']*(1-df.loc[m,'206Pb/238U Bias Corrected']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
+                                                                              (-df.loc[m,'206Pb/238U Bias Corrected']*df.loc[m,'frac_factor_206238'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common64_se[m]/common64[m])**2+(df.loc['SE% 206Pb/204Pb']/100)**2))**2
+                                                                              )
                         df.loc[m,'238U/206Pb BiasPbc Corrected'] = 1/df.loc[m,'206Pb/238U BiasPbc Corrected']
                         df.loc[m,'Common Pb Correction'] = '204Pb Corrected'
                         df.loc[m,'206Pb/238U BiasPbC Corrected Age'] = np.log(df.loc[m,'206Pb/238U BiasPbc Corrected'] + 1) / lambda_238
+                        
+                        df.loc[m,'1S 206Pb/238U BiasPbc Corrected Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'206Pb/238U BiasPbc Corrected']+1)))**2*(df.loc[m,'1S 206Pb/238U BiasPbc Corrected'])**2 + 
+                                                                                  (-np.log(df.loc[m,'206Pb/238U BiasPbc Corrected']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                        df.loc[m,'1S 206Pb/238U BiasPbc Corrected Age'] = np.sqrt((df['1S 206Pb/238U BiasPbc Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
                         df.loc[m,'238U/206Pb c'] = 1 /df.loc[m,'206Pb/238U BiasPbC Corrected'] # dummy so get_projections works
                         concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # reproject to account for any other variation and get concordant ages if desired
                         df.loc[m,'Concordant 206Pb/238U'] = 1/concordia_238_206[m]
                         df.loc[m,'Concordant 238U/206Pb'] = 1/df.loc[m,'Concordant 206Pb/238U']
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U Bias Corrected']/df.loc[m,'206Pb/238U Bias Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common64_se[m]/common64[m])**2)
                         df.loc[m,'Concordant Age'] = np.log(df.loc[m,'Concordant 206Pb/238U'] + 1) / lambda_238
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'Concordant 206Pb/238U']+1)))**2*(df['1S Concordant 206Pb/238U'])**2 + 
+                                                                (-np.log(df.loc[m,'Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((df.loc[m,'1S Concordant Age'])**2 + (df.loc[m,'tims_error_std']/2)**2)
+                        df.loc[m,'206Pb/238U Age 1s (tot)'] = df.loc[m,'1S Concordant Age']
                         df.loc[m,'207Pb/206Pbr'] = pts_pb_r[m]
                     else:
-                        common = df.loc[m,'SK 207Pb/206Pb']
+                        common = common76[m]
                         df.loc[m,'Concordant 206Pb/238U'] = 1/concordia_238_206[m] # get concordant 6/38 ratio from projections
                         df.loc[m,'Concordant 238U/206Pb'] = 1/df.loc[m,'Concordant 206Pb/238U']
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U Bias Corrected']/df.loc[m,'206Pb/238U Bias Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common76_se[m]/common76[m])**2)
                         df.loc[m,'Concordant Age'] = np.log(df.loc[m,'Concordant 206Pb/238U'] + 1) / lambda_238
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'Concordant 206Pb/238U']+1)))**2*(df.loc[m,'1S Concordant 206Pb/238U'])**2 + 
+                                                                (-np.log(df.loc[m,'Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((df.loc[m,'1S Concordant Age'])**2 + (df.loc[m,'tims_error_std']/2)**2)
+                        df.loc[m,'206Pb/238U Age 1s (tot)'] = df.loc[m,'1S Concordant Age']
                         f_Pbc = (pb_m[m] - pts_pb_r[m]) / (common - pts_pb_r[m])
                         if f_Pbc <= 0:
                             f_Pbc = 0
@@ -1185,18 +1232,34 @@ class calc_fncs:
             if DThU_treatment == 'Zircon Input/Melt Input':
                 df['206Pb/238U BiasTh Corrected'] = 1/(df['238U/206Pb Bias Corrected'] - (lambda_238/lambda_230*((ThU_zrn/ThU_magma)-1))) # common Pb and Th disequil corrected 6/38 ratio
                 df['238U/206Pb c'] = 1/df['206Pb/238U BiasTh Corrected']
+                df['[Th/U]'] = ThU_zrn
+                df['[Th/U] magma'] = ThU_magma
             elif DThU_treatment == 'Estimate or Offline/Melt Input':
                 df['206Pb/238U BiasTh Corrected'] = 1/(df['238U/206Pb Bias Corrected'] - (lambda_238/lambda_230*(((df['[Th/U]'])/ThU_magma)-1))) # common Pb and Th disequil corrected 6/38 ratio
                 df['238U/206Pb BiasTh Corrected'] = 1/df['206Pb/238U BiasTh Corrected']
+                ThU_zrn = df['[Th/U]']
+                df['[Th/U] magma'] = ThU_magma
             
+            df['1S 206Pb/238U BiasTh Corrected'] = np.sqrt((df['frac_factor_206238'])**2*(df['206Pb/238U Reg. err'])**2 + (df['206Pb/238U Bias Corrected'])**2*(df['avg_reg_err'])**2 +
+                                                            (-(ThU_zrn-ThU_magma)/(lambda_230*ThU_magma))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2 + ((lambda_238*(ThU_zrn-ThU_magma))/(lambda_230**2*ThU_magma))**2*(lambda_230_2sig_percent/2/100*lambda_230)**2
+                                                            )
             df['206Pb/238U BiasTh Corrected Age'] = np.log(df['206Pb/238U BiasTh Corrected'] + 1) / lambda_238 # 6/38 common Pb corrected age
+            df['1S 206Pb/238U BiasTh Corrected Age'] = np.sqrt((1/(lambda_238*(df['206Pb/238U BiasTh Corrected']+1)))**2*(df['1S 206Pb/238U BiasTh Corrected'])**2 + 
+                                                               (-np.log(df['206Pb/238U BiasTh Corrected']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+            df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((df['1S 206Pb/238U BiasTh Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
+            
             
             if Pbcmethod == '207Pb':
                 df['238U/206Pb c'] = 1 /df['206Pb/238U BiasTh Corrected']
                 concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # concordant points from projection to common Pb and Concordia
                 df['Concordant 206Pb/238U'] = 1/concordia_238_206 # get concordant 6/38 ratio from projections
                 df['Concordant 238U/206Pb'] = 1/df['Concordant 206Pb/238U']
+                df['1S Concordant 206Pb/238U'] = df['Concordant 206Pb/238U']*np.sqrt((df['1S 206Pb/238U BiasTh Corrected']/df['206Pb/238U BiasTh Corrected'])**2 + (df['SE 207Pb/206Pb']/df['207Pb/206Pb c'])**2 + (common76_se/common76)**2)
                 df['Concordant Age'] = np.log(df['Concordant 206Pb/238U'] + 1) / lambda_238 # 6/38 common Pb corrected age
+                df['1S Concordant Age'] = np.sqrt((1/(lambda_238*(df['Concordant 206Pb/238U']+1)))**2*(df['1S Concordant 206Pb/238U'])**2 + 
+                                                  (-np.log(df['Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                df['1S Concordant Age'] = np.sqrt((df['1S Concordant Age'])**2 + (df['tims_error_std']/2)**2)
+                df['206Pb/238U Age 1s (tot)'] = df['1S Concordant Age']
                 
                 f_Pbc = (pb_m - pts_pb_r) / (common76 - pts_pb_r)
                 f_filter = np.zeros(len(common_filter))
@@ -1216,33 +1279,52 @@ class calc_fncs:
                 df['207Pb/206Pbr'] = zeroslikedf
                 df['206Pb/238U BiasThPbc Corrected'] = zeroslikedf
                 df['238U/206Pb BiasThPbc Corrected'] = zeroslikedf
+                df['1S 206Pb/238U BiasPbc Corrected'] = zeroslikedf
                 df['Concordant 206Pb/238U'] = zeroslikedf
                 df['Concordant 238U/206Pb'] = zeroslikedf
+                df['1S Concordant 206Pb/238U'] = zeroslikedf
                 df['Concordant Age'] = zeroslikedf
+                df['1S Concordant Age'] = zeroslikedf
                 df['Common Pb Correction'] = zeroslikedf
                 df['238U/206Pb c'] = 1 /df['206Pb/238U BiasTh Corrected']
                 concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # concordant points from projection to common Pb and Concordia - needed to pass into loop
                 for m in range(0,len(df)):
                     if df.loc[m,'204Pb'] > 0:
-                        f_Pbc = df.loc[m,'SK 206Pb/204Pb']/df.loc[m,'206Pb/204Pb c']
+                        f_Pbc = common64[m]/df.loc[m,'206Pb/204Pb c']
                         df.loc[m,'f_Pbc'] = f_Pbc
                         df.loc[m,'207Pb/206Pbr'] = pb_m[m] - pb_m[m]*f_Pbc
                         df.loc[m,'206Pb/238U BiasThPbc Corrected'] = df.loc[m,'206Pb/238U BiasTh Corrected']-(df.loc[m,'206Pb/238U BiasTh Corrected']*df.loc[m,'f_Pbc'])
                         df.loc[m,'238U/206Pb BiasThPbc Corrected'] = 1/df.loc[m,'206Pb/238U BiasThPbc Corrected']
+                        df.loc[m,'1S 206Pb/238U BiasThPbc Corrected'] = np.sqrt((df.loc[m,'frac_factor_206238']*(1-df.loc[m,'f_Pbc']))**2*(df.loc['206Pb/238U Reg. err'])**2 + (df.loc[m,'206Pb/238U BiasThPbc Corrected']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
+                                                                                ((-df.loc[m,'[Th/U']+df.loc[m,'[Th/U] magma']+df.loc[m,'f_Pbc']*df.loc[m,'[Th/U]']-df.loc[m,'f_Pbc']*df.loc[m,'[Th/U] magma'])/(lambda_230*df.loc[m,'[Th/U] magma']))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2 +
+                                                                                ((lambda_238*(df.loc[m,'[Th/U]']-df.loc[m,'[Th/U] magma']) - lambda_238*df.loc[m,'f_Pbc']*(df.loc[m,'[Th/U]']-df.loc[m,'[Th/U] magma'])) / (lambda_230**2*df.loc[m,'[Th/U] magma']))**2*(lambda_230_2sig_percent/2/100*lambda_230)**2 +
+                                                                                (-df.loc[m,'206Pb/238U BiasThPbc Corrected']*df.loc[m,'frac_factor_206238']+lambda_238*((df.loc[m,'[Th/U]']-df.loc[m,'[Th/U] magma'])/(df.loc[m,'[Th/U] magma']*lambda_230)))**2*(df.loc[m,'avg_reg_err'])**2
+                                                                                )
                         df.loc[m,'Common Pb Correction'] = '204Pb Corrected'
                         df.loc[m,'206Pb/238U BiasThPbc Corrected Age'] = np.log(df.loc[m,'206Pb/238U BiasThPbc Corrected'] + 1) / lambda_238
+                        df.loc[m,'1S 206Pb/238U BiasThPbc Corrected Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'206Pb/238U BiasThPbc Corrected']+1)))**2*(df.loc[m,'1S 206Pb/238U BiasThPbc Corrected'])**2 + 
+                                                                                    (-np.log(df.loc[m,'206Pb/238U BiasThPbc Corrected']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                        df.loc[m,'1S 206Pb/238U BiasThPbc Corrected Age'] = np.sqrt((df.loc[m,'1S 206Pb/238U BiasThPbc Corrected Age'])**2 + ((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2)
                         df.loc[m,'238U/206Pb c'] = 1 /df.loc[m,'206Pb/238U BiasThPbc Corrected'] # dummy so get_projections works
                         concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # reproject to account for any other variation and get concordant ages if desired
                         df.loc[m,'Concordant 206Pb/238U'] = 1/concordia_238_206[m]
                         df.loc[m,'Concordant 238U/206Pb'] = 1/df.loc[m,'Concordant 206Pb/238U']
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U BiasTh Corrected']/df.loc[m,'206Pb/238U BiasTh Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common64_se[m]/common64[m])**2)
                         df.loc[m,'Concordant Age'] = np.log(df.loc[m,'Concordant 206Pb/238U'] + 1) / lambda_238
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'Concordant 206Pb/238U']+1)))**2*(df.loc[m,'1S Concordant 206Pb/238U'])**2 + 
+                                                                (-np.log(df.loc[m,'Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((df.loc[m,'1S Concordant Age'])**2 + (df.loc[m,'tims_error_std']/2)**2)
                         df.loc[m,'207Pb/206Pbr'] = pts_pb_r[m]
                         
                     else:
-                        common = df.loc[m,'SK 207Pb/206Pb']
+                        common = common76[m]
                         df.loc[m,'Concordant 206Pb/238U'] = 1/concordia_238_206[m] # get concordant 6/38 ratio from projections
                         df.loc[m,'Concordant 238U/206Pb'] = 1/df.loc[m,'Concordant 206Pb/238U']
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U BiasTh Corrected']/df.loc[m,'206Pb/238U BiasTh Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common76_se[m]/common76[m])**2)
                         df.loc[m,'Concordant Age'] = np.log(df.loc[m,'Concordant 206Pb/238U'] + 1) / lambda_238
+                        df.loc[m,'1S Concordant Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'Concordant 206Pb/238U']+1)))**2*(df.loc[m,'1S Concordant 206Pb/238U'])**2 + 
+                                                                (-np.log(df.loc[m,'Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U BiasTh Corrected']/df.loc[m,'206Pb/238U BiasTh Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common76_se[m]/common76[m])**2)
                         f_Pbc = (pb_m[m] - pts_pb_r[m]) / (common - pts_pb_r[m])
                         if f_Pbc <= 0:
                             f_Pbc = 0
@@ -1257,157 +1339,24 @@ class calc_fncs:
 
         df['counts_pb206r'] = df['206Pb'] * (1-df['f_Pbc']) # counts of radiogenic 206
         df['207Pb/235U c'] = df['207Pb/235U Bias Corrected']-(df['207Pb/235U Bias Corrected']*df['f_Pbc']) # numerically calculated 7/35 ratio
-        df['207Pb/235U Bias Corrected Age'] = np.log(df['207Pb/235U Bias Corrected'] + 1) / lambda_235 # 7/35 common Pb corrected age
-        df['207Pb/235U BiasPbC Corrected Age'] = np.log(df['207Pb/235U c'] + 1) / lambda_235 # 7/35 common Pb corrected age
-        dagetot_207_list = []
-        # check if user input values for common Pb correction. If so, propagate those errors. If not, use default value
-        if common_207206_input!= 0 and common_207206_uncertainty != 0:
-            if Pbcmethod == '207Pb':
-                dagetot_207 = np.abs(df['207Pb/235U BiasPbC Corrected Age'])*(((df['tims_error_std_207']/2)/df['tims_age_207'])**2 + (df['avg_reg_err_207']/df['avg_std_ratio_207'])**2 +
-                                                                              (df['207Pb/235U Reg. err']/(df['207Pb/235U']))**2 + (lambda_235_2sig_percent/2/100)**2 +
-                                                                              (df['Common 207Pb/206Pb Uncertainty']/df['Common 207Pb/206Pb'])**2 +
-                                                                              (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
-                dagetot_207_list = dagetot_207
-            elif Pbcmethod == '204Pb':
-                for m in range(0,len(df)):
-                    if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                        dagetot_207 = np.abs(df.loc[m,'207Pb/235U BiasPbC Corrected Age'])*(((df.loc[m,'tims_error_std_207']/2)/df.loc[m,'tims_age_207'])**2 + (df.loc[m,'avg_reg_err_207']/df.loc[m,'avg_std_ratio_207'])**2 +
-                                                                                            (df.loc[m,'207Pb/235U Reg. err']/(df.loc[m,'207Pb/235U']))**2 + (lambda_235_2sig_percent/2/100)**2 +
-                                                                                            (df.loc[m,'Common 206Pb/204Pb Uncertainty']/df.loc[m,'Common 206Pb/204Pb'])**2 + (df.loc[m,'SE% 206Pb/204Pb']/100)**2 +
-                                                                                            (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                    elif df.loc[m,'Common Pb Correction'] == '204Pb b.d.l. - 207Pb Corrected':
-                        dagetot_207 = np.abs(df.loc[m,'207Pb/235U BiasPbC Corrected Age'])*(((df.loc[m,'tims_error_std_207']/2)/df.loc[m,'tims_age_207'])**2 + (df.loc[m,'avg_reg_err_207']/df.loc[m,'avg_std_ratio_207'])**2 +
-                                                                                            (df.loc[m,'207Pb/235U Reg. err']/(df.loc[m,'207Pb/235U']))**2 + (lambda_235_2sig_percent/2/100)**2 +
-                                                                                            (df.loc[m,'Common 207Pb/206Pb Uncertainty']/df.loc[m,'Common 207Pb/206Pb'])**2 +
-                                                                                            (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                    dagetot_207_list.append(dagetot_207)
-                        
-        else:
-            if Pbcmethod == '207Pb':
-                dagetot_207 = np.abs(df['207Pb/235U BiasPbC Corrected Age'])*(((df['tims_error_std_207']/2)/df['tims_age_207'])**2 + (df['avg_reg_err_207']/df['avg_std_ratio_207'])**2 +
-                                                                              (df['207Pb/235U Reg. err']/(df['207Pb/235U']))**2 + (lambda_235_2sig_percent/2/100)**2 +
-                                                                              ((SK74_2sig/2)/df['SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 +
-                                                                              (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
-                dagetot_207_list = dagetot_207
-            elif Pbcmethod == '204Pb':
-                for m in range(0,len(df)):
-                    if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                        dagetot_207 = np.abs(df.loc[m,'207Pb/235U BiasPbC Corrected Age'])*(((df.loc[m,'tims_error_std_207']/2)/df.loc[m,'tims_age_207'])**2 + (df.loc[m,'avg_reg_err_207']/df.loc[m,'avg_std_ratio_207'])**2 +
-                                                                                            (df.loc[m,'207Pb/235U Reg. err']/(df.loc[m,'207Pb/235U']))**2 + (lambda_235_2sig_percent/2/100)**2 +
-                                                                                            ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 + (df.loc[m,'SE% 206Pb/204Pb']/100)**2 +
-                                                                                            (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                    elif df.loc[m,'Common Pb Correction'] == '204Pb b.d.l. - 207Pb Corrected':
-                        dagetot_207 = np.abs(df.loc[m,'207Pb/235U BiasPbC Corrected Age'])*(((df.loc[m,'tims_error_std_207']/2)/df.loc[m,'tims_age_207'])**2 + (df.loc[m,'avg_reg_err_207']/df.loc[m,'avg_std_ratio_207'])**2 +
-                                                                                            (df.loc[m,'207Pb/235U Reg. err']/(df.loc[m,'207Pb/235U']))**2 + (lambda_235_2sig_percent/2/100)**2 +
-                                                                                            ((SK74_2sig/2)/df.loc[m,'SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df.loc[m,'SK 206Pb/204Pb'])**2 +
-                                                                                            (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                    dagetot_207_list.append(dagetot_207)
-                
-        df['207Pb/235U Age 1s'] = dagetot_207_list
-        # check which type of corrections user requests. propagate errors based on those
-        dagetot_list = []
-        if Pb_Th_std_crct_selector == 'Common Pb':
-            # propagate errors
-            # error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
-            # error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
-            # total propagated error
-            dage = np.abs(df['Concordant Age'])*((df['206Pb/238U Reg. err']/df['206Pb/238U_unc'])**2 + (df['SE% 207Pb/206Pb']/100)**2)**(1/2) # analytical error
-            if common_207206_input!= 0 and common_207206_uncertainty != 0:
-                if Pbcmethod == '207Pb':
-                    dagetot = np.abs(df['Concordant Age'])*(((df['tims_error_std']/2)/df['tims_age_std'])**2 + (df['avg_reg_err']/df['avg_std_ratio'])**2 +
-                                                            (df['206Pb/238U Reg. err']/df['206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                            (df['Common 207Pb/206Pb Uncertainty']/df['Common 207Pb/206Pb'])**2 +
-                                                            (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
-                    dagetot_list = dagetot
-                elif Pbcmethod == '204Pb':
-                    for m in range(0,len(df)):
-                        if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                            dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                          (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                          (df.loc[m,'Common 206Pb/204Pb Uncertainty']/df.loc[m,'Common 206Pb/204Pb'])**2 + (df.loc[m,'SE% 206Pb/204Pb']/100)**2 +
-                                                                          (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                        elif df.loc[m,'Common Pb Correction'] == '204Pb b.d.l. - 207Pb Corrected':
-                            dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                          (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                          (df.loc[m,'Common 207Pb/206Pb Uncertainty']/df.loc[m,'Common 207Pb/206Pb'])**2 +
-                                                                          (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                        dagetot_list.append(dagetot)
+        for m in range(0,len(df)):
+            if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
+                df.loc[m,'1S 207Pb/235U c'] = np.sqrt((df.loc[m,'frac_factor_207235']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'207Pb/235U Reg. err'])**2 +
+                                                      (df.loc[m,'207Pb/235U']*(1-df.loc[m,'207Pb/235U']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
+                                                      (-df.loc[m,'207Pb/235U']*df.loc[m,'frac_factor_207235'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common64_se[m]/common64[m])**2 + (df.loc[m,'SE 206Pb/204Pb']/df.loc[m,'206Pb/204Pb'])**2))**2
+                                                      )
             else:
-                if Pbcmethod == '207Pb':
-                    dagetot = np.abs(df['Concordant Age'])*(((df['tims_error_std']/2)/df['tims_age_std'])**2 + (df['avg_reg_err']/df['avg_std_ratio'])**2 +
-                                                            (df['206Pb/238U Reg. err']/(df['206Pb/238U']))**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                            ((SK74_2sig/2)/df['SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 +
-                                                            (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
-                    dagetot_list = dagetot
-                elif Pbcmethod =='204Pb':
-                    for m in range(0,len(df)):
-                        if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                            dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                          (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                          ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 + (df.loc[m,'SE% 206Pb/204Pb']/100)**2 +
-                                                                          (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                        elif df.loc[m,'Common Pb Correction'] == '204Pb b.d.l. - 207Pb Corrected':
-                            dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                          (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                          ((SK74_2sig/2)/df.loc[m,'SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df.loc[m,'SK 206Pb/204Pb'])**2 +
-                                                                          (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                        dagetot_list.append(dagetot)
-                    
-
-            df['206Pb/238U Age 1s (meas)'] = dage
-            df['206Pb/238U Age 1s (tot)'] = dagetot_list
-        elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
-           # propagate errors
-           # error on age equation. error on decay constant includes 1.5* counting stats (Mattinson 1987)
-           # error on estimation for common lead using 207 method. Uses conservaitve estimates of 1.0 for 206/204 and 0.3 for 207/204 (Mattionson, 1987)
-           # total propagated error
-           dage = np.abs(df['Concordant Age'])*((df['206Pb/238U Reg. err']/df['206Pb/238U_unc'])**2 + (df['SE% 207Pb/206Pb']/100)**2)**(1/2) # analytical error
-           if common_207206_input!= 0 and common_207206_uncertainty != 0:
-               if Pbcmethod == '207Pb':
-                   dagetot = np.abs(df['Concordant Age'])*(((df['tims_error_std']/2)/df['tims_age_std'])**2 + (df['avg_reg_err']/df['avg_std_ratio'])**2 +
-                                                           (df['206Pb/238U Reg. err']/df['206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                           (df['Common 207Pb/206Pb Uncertainty']/df['Common 207Pb/206Pb'])**2 +
-                                                           (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
-                   dagetot_list = dagetot
-               elif Pbcmethod == '204Pb':
-                   for m in range(0,len(df)):
-                       if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                           dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                         (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                         (df.loc[m,'Common 206Pb/204Pb Uncertainty']/df.loc[m,'Common 206Pb/204Pb'])**2 + (df.loc[m,'SE% 206Pb/204Pb']/100)**2 +
-                                                                         (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                       elif df.loc[m,'Common Pb Correction'] == '204Pb b.d.l. - 207Pb Corrected':
-                           dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                         (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                         (df.loc[m,'Common 207Pb/206Pb Uncertainty']/df.loc[m,'Common 207Pb/206Pb'])**2 +
-                                                                         (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                       dagetot_list.append(dagetot)
-           else:
-               if Pbcmethod == '207Pb':
-                   dagetot = np.abs(df['Concordant Age'])*(((df['tims_error_std']/2)/df['tims_age_std'])**2 + (df['avg_reg_err']/df['avg_std_ratio'])**2 +
-                                                           (df['206Pb/238U Reg. err']/(df['206Pb/238U']))**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                           ((SK74_2sig/2)/df['SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 +
-                                                           (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
-                   dagetot_list = dagetot
-               elif Pbcmethod =='204Pb':
-                   for m in range(0,len(df)):
-                       if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                           dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                         (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                         ((SK64_2sig/2)/df['SK 206Pb/204Pb'])**2 + (df.loc[m,'SE% 206Pb/204Pb']/100)**2 +
-                                                                         (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                       elif df.loc[m,'Common Pb Correction'] == '204Pb b.d.l. - 207Pb Corrected':
-                           dagetot = np.abs(df.loc[m,'Concordant Age'])*(((df.loc[m,'tims_error_std']/2)/df.loc[m,'tims_age_std'])**2 + (df.loc[m,'avg_reg_err']/df.loc[m,'avg_std_ratio'])**2 +
-                                                                         (df.loc[m,'206Pb/238U Reg. err']/df.loc[m,'206Pb/238U'])**2 + (lambda_238_2sig_percent/2/100)**2 +
-                                                                         ((SK74_2sig/2)/df.loc[m,'SK 207Pb/204Pb'])**2 + ((SK64_2sig/2)/df.loc[m,'SK 206Pb/204Pb'])**2 +
-                                                                         (df.loc[m,'SE% 207Pb/206Pb']/100)**2)**(1/2)
-                       dagetot_list.append(dagetot)
-                   
-
-           df['206Pb/238U Age 1s (meas)'] = dage
-           df['206Pb/238U Age 1s (tot)'] = dagetot_list
-
-
+                df.loc[m,'1S 207Pb/235U c'] = np.sqrt((df.loc[m,'frac_factor_207235']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'207Pb/235U Reg. err'])**2 +
+                                                      (df.loc[m,'207Pb/235U']*(1-df.loc[m,'207Pb/235U']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
+                                                      (-df.loc[m,'207Pb/235U']*df.loc[m,'frac_factor_207235'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common76_se[m]/common76[m])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2))**2
+                                                      )
+        df['207Pb/235U Bias Corrected Age'] = np.log(df['207Pb/235U Bias Corrected'] + 1) / lambda_235 # 7/35 bias corrected corrected age
+        df['207Pb/235U BiasPbc Corrected Age'] = np.log(df['207Pb/235U c'] + 1) / lambda_235 # 7/35 bias corrected + common Pb corrected age
+        
+        df['1S 207Pb/235U Bias Corrected Age'] = np.sqrt((1/(lambda_235*(df['207Pb/235U Bias Corrected']+1)))**2*(df['1S 207Pb/235U c'])**2 + 
+                                                         (-np.log(df['207Pb/235U Bias Corrected']+1)/(lambda_235**2))**2*(lambda_235_2sig_percent/2/100*lambda_235)**2)
+        df['1S 207Pb/235U BiasPbc Corrected Age'] = np.sqrt((df['1S 207Pb/235U Bias Corrected Age'])**2 + ((df['tims_error_std_207']/2)/df['tims_age_207'])**2)
+        
         return df
         
         
@@ -1514,7 +1463,7 @@ class calc_fncs:
 
         """
         # correct standard ages, get frac factors, etc
-        avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m, avg_std_concordant76 = \
+        avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m, avg_std_concordant76, avg_err_207206 = \
             calc_fncs.correct_standard_ages(std, std_txt, Pb_Th_std_crct_selector, common_207206_input,Pbcmethod)
         tims_age = accepted_ages.get(std_txt)[0] # get accepted from dictionary
         tims_error = TIMS_errors.get(std_txt)[0]
@@ -1531,7 +1480,7 @@ class calc_fncs:
         elif Pb_Th_std_crct_selector == 'Common Pb + Th Disequil.':
             frac_factor = std_accpt_ratio/avg_std_ratio_Thcrct
 
-        return frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, UTh_std, UTh_std_m
+        return frac_factor, frac_factor_207, frac_factor_76, tims_age, tims_error, tims_age_207, tims_error_207, avg_std_age, avg_std_age_Thcrct, avg_std_age_207, avg_std_ratio, avg_std_ratio_Thcrct, avg_std_ratio_207, avg_reg_err, avg_reg_err_207, avg_err_207206, UTh_std, UTh_std_m
 
     
     def mswd(data,variable,error):
