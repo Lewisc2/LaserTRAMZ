@@ -1338,22 +1338,22 @@ class calc_fncs:
 
 
         df['counts_pb206r'] = df['206Pb'] * (1-df['f_Pbc']) # counts of radiogenic 206
-        df['207Pb/235U c'] = df['207Pb/235U Bias Corrected']-(df['207Pb/235U Bias Corrected']*df['f_Pbc']) # numerically calculated 7/35 ratio
+        df['207Pb/235U BiasPbc Corrected'] = df['207Pb/235U Bias Corrected']-(df['207Pb/235U Bias Corrected']*df['f_Pbc']) # numerically calculated 7/35 ratio
         for m in range(0,len(df)):
             if df.loc[m,'Common Pb Correction'] == '204Pb Corrected':
-                df.loc[m,'1S 207Pb/235U c'] = np.sqrt((df.loc[m,'frac_factor_207235']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'207Pb/235U Reg. err'])**2 +
-                                                      (df.loc[m,'207Pb/235U']*(1-df.loc[m,'207Pb/235U']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
-                                                      (-df.loc[m,'207Pb/235U']*df.loc[m,'frac_factor_207235'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common64_se[m]/common64[m])**2 + (df.loc[m,'SE 206Pb/204Pb']/df.loc[m,'206Pb/204Pb'])**2))**2
-                                                      )
+                df.loc[m,'1S 207Pb/235U BiasPbc Corrected'] = np.sqrt((df.loc[m,'frac_factor_207235']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'207Pb/235U Reg. err'])**2 +
+                                                                      (df.loc[m,'207Pb/235U']*(1-df.loc[m,'207Pb/235U']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
+                                                                      (-df.loc[m,'207Pb/235U']*df.loc[m,'frac_factor_207235'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common64_se[m]/common64[m])**2 + (df.loc[m,'SE 206Pb/204Pb']/df.loc[m,'206Pb/204Pb'])**2))**2
+                                                                      )
             else:
-                df.loc[m,'1S 207Pb/235U c'] = np.sqrt((df.loc[m,'frac_factor_207235']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'207Pb/235U Reg. err'])**2 +
-                                                      (df.loc[m,'207Pb/235U']*(1-df.loc[m,'207Pb/235U']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
-                                                      (-df.loc[m,'207Pb/235U']*df.loc[m,'frac_factor_207235'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common76_se[m]/common76[m])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2))**2
-                                                      )
+                df.loc[m,'1S 207Pb/235U BiasPbc Corrected'] = np.sqrt((df.loc[m,'frac_factor_207235']*(1-df.loc[m,'f_Pbc']))**2*(df.loc[m,'207Pb/235U Reg. err'])**2 +
+                                                                      (df.loc[m,'207Pb/235U']*(1-df.loc[m,'207Pb/235U']*df.loc[m,'f_Pbc']))**2*(df.loc[m,'avg_reg_err'])**2 +
+                                                                      (-df.loc[m,'207Pb/235U']*df.loc[m,'frac_factor_207235'])**2*(df.loc[m,'f_Pbc']*np.sqrt((common76_se[m]/common76[m])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2))**2
+                                                                      )
         df['207Pb/235U Bias Corrected Age'] = np.log(df['207Pb/235U Bias Corrected'] + 1) / lambda_235 # 7/35 bias corrected corrected age
-        df['207Pb/235U BiasPbc Corrected Age'] = np.log(df['207Pb/235U c'] + 1) / lambda_235 # 7/35 bias corrected + common Pb corrected age
+        df['207Pb/235U BiasPbc Corrected Age'] = np.log(df['207Pb/235U BiasPbc Corrected'] + 1) / lambda_235 # 7/35 bias corrected + common Pb corrected age
         
-        df['1S 207Pb/235U Bias Corrected Age'] = np.sqrt((1/(lambda_235*(df['207Pb/235U Bias Corrected']+1)))**2*(df['1S 207Pb/235U c'])**2 + 
+        df['1S 207Pb/235U Bias Corrected Age'] = np.sqrt((1/(lambda_235*(df['207Pb/235U Bias Corrected']+1)))**2*(df['1S 207Pb/235U BiasPbc Corrected'])**2 + 
                                                          (-np.log(df['207Pb/235U Bias Corrected']+1)/(lambda_235**2))**2*(lambda_235_2sig_percent/2/100*lambda_235)**2)
         df['1S 207Pb/235U BiasPbc Corrected Age'] = np.sqrt((df['1S 207Pb/235U Bias Corrected Age'])**2 + ((df['tims_error_std_207']/2)/df['tims_age_207'])**2)
         
@@ -2204,11 +2204,11 @@ class finalize_ages(param.Parameterized):
                                      '[U] µg/g','[Th] µg/g','[Th/U]','238U/235U c','SE% 238U/235U','238U/232Th','SE% 238U/232Th',
                                      '208Pb/232Th','SE% 208Pb/232Th',
                                      '206Pb/204Pb','SE% 206Pb/204Pb','207Pb/206Pb','207Pb/206Pb c','207Pb/206Pbr','SE 207Pb/206Pb','SE% 207Pb/206Pb','f_Pbc',
-                                     '207Pb/235U','207Pb/235U Bias Corrected','207Pb/235U c','SE% 207Pb/235U',
+                                     '207Pb/235U','SE% 207Pb/235U','207Pb/235U Bias Corrected', '1S 207Pb/235U Bias Corrected', '207Pb/235U BiasPbc Corrected', '1S 207Pb/235U BiasPbc Corrected',
                                      '206Pb/238U','238U/206Pb','206Pb/238U Bias Corrected','206Pb/238U BiasPbC Corrected','206Pb/238U BiasThPbC Corrected',
-                                     'Concordant 206Pb/238U','Concordant 238U/206Pb','206Pb/238U c','238U/206Pb c','SE 206Pb/238U','SE% 206Pb/238U',
+                                     'Concordant 206Pb/238U', '1S Concordant 206Pb/238U','Concordant 238U/206Pb','SE 206Pb/238U','SE% 206Pb/238U',
                                      'Weth C','Weth Wid1','Weth Wid2','Weth rho','TW C','TW Wid1','TW Wid2','TW rho',
-                                     '206Pb/238U Bias Corrected Age','206Pb/238U BiasPbC Corrected Age','206Pb/238U BiasTh Corrected Age','206Pb/238U BiasThPbC Corrected Age','Concordant Age','206Pb/238U Age 1s',
+                                     '206Pb/238U Bias Corrected Age', '1S 206Pb/238U Bias Corrected Age', '206Pb/238U BiasPbC Corrected Age', '1S 206Pb/238U BiasPbC Corrected Age', '206Pb/238U BiasTh Corrected Age', '1S 206Pb/238U BiasTh Corrected Age','206Pb/238U BiasThPbC Corrected Age', '1S 206Pb/238U BiasThPbC Corrected Age','Concordant Age','1S Concordant Age',
                                      '207Pb/235U Bias Corrected Age','207Pb/235U BiasPbC Corrected Age','207Pb/235U Age 1s',
                                     ]
             try:
