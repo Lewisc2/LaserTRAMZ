@@ -5,3 +5,5 @@
 *.xlsb
 *.cfg
 venv/
+testing.py
+site-packages/*
