@@ -78,7 +78,10 @@ class calc_fncs:
             
         meanbackgrounds = backgrounds.loc[:,'202Hg':'238U'].mean()
         sebackgrounds = backgrounds.loc[:,'202Hg':'238U'].std()/np.sqrt(len(backgrounds))
-        lods = 3*backgrounds.loc[:,'202Hg':'238U'].std()
+        # lods = 3*backgrounds.loc[:,'202Hg':'238U'].std()
+        k=1.645 # coverage factor for 95% confidence
+        lcs = k*np.sqrt(backgrounds.loc[:,'202Hg':'238U'].std().astype(float)/np.sqrt(len(backgrounds))) # citical limits
+        lods = k**2 + 2*lcs # detection limits
         ablation_backsub = ablation.loc[:,'202Hg':'238U'].sub(meanbackgrounds,axis='columns').clip(lower=0)
         ablation_backsub.insert(0,'Time_s',data['Time_s'])
         ablation_backsub = ablation_backsub.reset_index(drop=True)
