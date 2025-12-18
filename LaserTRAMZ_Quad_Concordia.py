@@ -703,13 +703,13 @@ class calc_fncs:
         if calc_RM_ratio_errors == 'Primary Raw Ratios':
             pass
         else:
-            wtd_age,wtd_age_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'Concordant Age','206Pb/238U Age 1s (tot)')
+            wtd_age,wtd_age_SE = calc_fncs.wtd_mean_se(RM_isotope_ratio_uncertainty_df,'Concordant Age','1S Concordant Age')
             wtd_age_ax.fill_between([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])], (wtd_age/1e6-wtd_age_SE/1e6), (wtd_age/1e6+wtd_age_SE/1e6), facecolor='teal', alpha=0.2)
             wtd_age_ax.plot([min(RM_isotope_ratio_uncertainty_df['measurementindex']),max(RM_isotope_ratio_uncertainty_df['measurementindex'])],[wtd_age/1e6,wtd_age/1e6],'-',color='k',lw=0.5)
             wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['Concordant Age']/1e6,
                                 yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Age 1s (meas) epi']*2/1e6,fmt='none',ecolor='r')
             wtd_age_ax.errorbar(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['Concordant Age']/1e6,
-                                yerr=RM_isotope_ratio_uncertainty_df['206Pb/238U Age 1s (meas)']*2/1e6,fmt='none',ecolor='k')
+                                yerr=RM_isotope_ratio_uncertainty_df['1S Concordant Age']*2/1e6,fmt='none',ecolor='k')
             wtd_age_ax.plot(RM_isotope_ratio_uncertainty_df['measurementindex'],RM_isotope_ratio_uncertainty_df['Concordant Age']/1e6,'d',mec='k',mfc='yellow',lw=0)
             # wtd_age_ylim = wtd_age_ax.get_ylim()
             # wtd_age_ax.plot([max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3,max(RM_isotope_ratio_uncertainty_df['measurementindex'])+3],[wtd_age_ylim[0],wtd_age_ylim[1]],'--k',lw=2)
@@ -1110,6 +1110,10 @@ class calc_fncs:
             df['1S 206Pb/238U Bias Corrected'] = np.sqrt((df['frac_factor_206238'])**2*(df['206Pb/238U Reg. err'])**2 + (df['206Pb/238U Bias Corrected'])**2*(df['avg_reg_err'])**2)
             df['1S 207Pb/235U Bias Corrected'] = np.sqrt((df['frac_factor_207235'])**2*(df['207Pb/235U Reg. err'])**2 + (df['207Pb/235U Bias Corrected'])**2*(df['avg_reg_err_207'])**2)
             df['206Pb/238U Age 1s (meas)'] = df['1S 206Pb/238U Bias Corrected']
+            df['206Pb/238U Bias Corrected Age'] = np.log(df['206Pb/238U Bias Corrected'] + 1) / lambda_238 # 6/38 common Pb corrected age
+            df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((1/(lambda_238*(df['206Pb/238U Bias Corrected']+1)))**2*(df['1S 206Pb/238U Bias Corrected'])**2 + 
+                                                             (-(np.log(df['206Pb/238U Bias Corrected']+1))/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
+            df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((df['1S 206Pb/238U Bias Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
             # if NIST used to calculate mass fractiationation, leave corrected values as is including uncertainties. Otherwise correct value by approximating 7/6 bias from zircon standard
             if mass_bias_pb != 'By Age':
                 df['207Pb/206Pb c'] = df['207Pb/206Pb c']
@@ -1136,10 +1140,6 @@ class calc_fncs:
         
         if Pb_Th_std_crct_selector == 'Common Pb':
             if Pbcmethod == '207Pb':
-                df['206Pb/238U Bias Corrected Age'] = np.log(df['206Pb/238U Bias Corrected'] + 1) / lambda_238 # 6/38 common Pb corrected age
-                df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((1/(lambda_238*(df['206Pb/238U Bias Corrected']+1)))**2*(df['1S 206Pb/238U Bias Corrected'])**2 + 
-                                                                 (-(np.log(df['206Pb/238U Bias Corrected']+1))/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
-                df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((df['1S 206Pb/238U Bias Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
                 df['238U/206Pb c'] = 1 /df['206Pb/238U Bias Corrected'] # dummy so get_projections works
                 concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # concordant points from projection to common Pb and Concordia
                 df['Concordant 206Pb/238U'] = 1/concordia_238_206 # get concordant 6/38 ratio from projections
@@ -2017,11 +2017,11 @@ class finalize_ages(param.Parameterized):
                             chosen_secondary_data.loc[i,'Epsilon 206Pb/238U'] = epi
                             if epi > 0.001:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = (chosen_secondary_data.loc[i,'SE 207Pb/206Pb'] + epi*chosen_secondary_data.loc[i,'SE 207Pb/206Pb'])/chosen_secondary_data.loc[i,'207Pb/206Pb c']*100
-                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] + epi*chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
+                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'1S Concordant 206Pb/238U'] + epi*chosen_secondary_data.loc[i,'1S Concordant 206Pb/238U']
                             else:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
-                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
-                            chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data.loc[i,'Concordant Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi']/chosen_secondary_data.loc[i,'206Pb/238U_unc'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi']/100)**2)**(1/2)
+                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'1S Concordant 206Pb/238U']
+                            chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data.loc[i,'Concordant Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi']/chosen_secondary_data.loc[i,'Concordant 206Pb/238U'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                             RM_isotope_ratio_data = chosen_secondary_data
                     elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
                         for i in range(0,len(chosen_secondary_data)):
@@ -2036,10 +2036,10 @@ class finalize_ages(param.Parameterized):
                             else:
                                 chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi'] = chosen_secondary_data.loc[i,'SE% 207Pb/206Pb']
                             if epipb206u238 > 0.001:
-                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err'] + epipb206u238*chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
+                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'1S 206Pb/238U Bias Corrected'] + epipb206u238*chosen_secondary_data.loc[i,'1S 206Pb/238U Bias Corrected']
                             else:
-                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'206Pb/238U Reg. err']
-                            chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data.loc[i,'Concordant Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi']/chosen_secondary_data.loc[i,'206Pb/238U_unc'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi']/100)**2)**(1/2)
+                                chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi'] = chosen_secondary_data.loc[i,'1S 206Pb/238U Bias Corrected']
+                            chosen_secondary_data.loc[i,'206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data.loc[i,'206Pb/238U Bias Corrected Age'] * ((chosen_secondary_data.loc[i,'206Pb/238U Reg. err epi']/chosen_secondary_data.loc[i,'206Pb/238U Bias Corrected'])**2 + (chosen_secondary_data.loc[i,'SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                             RM_isotope_ratio_data = chosen_secondary_data
                     elif self.calc_RM_ratio_errors == 'Primary Raw Ratios':
                         for i in range(0,len(chosen_std)):
@@ -2069,11 +2069,11 @@ class finalize_ages(param.Parameterized):
                     chosen_secondary_data['Epsilon 206Pb/238U'] = epi
                     if epi > 0.001:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = (chosen_secondary_data['SE 207Pb/206Pb'] + epi*chosen_secondary_data['SE 207Pb/206Pb'])/chosen_secondary_data['207Pb/206Pb c']*100
-                        chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err'] + epi*chosen_secondary_data['206Pb/238U Reg. err']
+                        chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['1S Concordant 206Pb/238U'] + epi*chosen_secondary_data['1S Concordant 206Pb/238U']
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
-                        chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err']
-                    chosen_secondary_data['206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data['Concordant Age'] * ((chosen_secondary_data['206Pb/238U Reg. err epi']/chosen_secondary_data['206Pb/238U_unc'])**2 + (chosen_secondary_data['SE% 207Pb/206Pb epi']/100)**2)**(1/2)
+                        chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['1S Concordant 206Pb/238U']
+                    chosen_secondary_data['206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data['Concordant Age'] * ((chosen_secondary_data['206Pb/238U Reg. err epi']/chosen_secondary_data['Concordant 206Pb/238U'])**2 + (chosen_secondary_data['SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                     RM_isotope_ratio_data = chosen_secondary_data
                     
                 elif self.calc_RM_ratio_errors == 'Secondary Normalized Ratios':
@@ -2088,10 +2088,10 @@ class finalize_ages(param.Parameterized):
                     else:
                         chosen_secondary_data['SE% 207Pb/206Pb epi'] = chosen_secondary_data['SE% 207Pb/206Pb']
                     if epipb206u238 > 0.001:
-                        chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err'] + epipb206u238*chosen_secondary_data['206Pb/238U Reg. err']
+                        chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['1S 206Pb/238U Bias Corrected'] + epipb206u238*chosen_secondary_data['1S 206Pb/238U Bias Corrected']
                     else:
                         chosen_secondary_data['206Pb/238U Reg. err epi'] = chosen_secondary_data['206Pb/238U Reg. err']
-                    chosen_secondary_data['206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data['Concordant Age'] * ((chosen_secondary_data['206Pb/238U Reg. err epi']/chosen_secondary_data['206Pb/238U_unc'])**2 + (chosen_secondary_data['SE% 207Pb/206Pb epi']/100)**2)**(1/2)
+                    chosen_secondary_data['206Pb/238U Age 1s (meas) epi'] = chosen_secondary_data['206Pb/238U Bias Corrected Age'] * ((chosen_secondary_data['206Pb/238U Reg. err epi']/chosen_secondary_data['206Pb/238U Bias Corrected'])**2 + (chosen_secondary_data['SE% 207Pb/206Pb epi']/100)**2)**(1/2)
                     RM_isotope_ratio_data = chosen_secondary_data
                     
                 elif self.calc_RM_ratio_errors == 'Primary Raw Ratios':
