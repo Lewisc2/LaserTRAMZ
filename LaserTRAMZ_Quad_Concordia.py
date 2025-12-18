@@ -1190,16 +1190,16 @@ class calc_fncs:
                                                                               )
                         df.loc[m,'238U/206Pb BiasPbc Corrected'] = 1/df.loc[m,'206Pb/238U BiasPbc Corrected']
                         df.loc[m,'Common Pb Correction'] = '204Pb Corrected'
-                        df.loc[m,'206Pb/238U BiasPbC Corrected Age'] = np.log(df.loc[m,'206Pb/238U BiasPbc Corrected'] + 1) / lambda_238
+                        df.loc[m,'206Pb/238U BiasPbc Corrected Age'] = np.log(df.loc[m,'206Pb/238U BiasPbc Corrected'] + 1) / lambda_238
                         
                         df.loc[m,'1S 206Pb/238U BiasPbc Corrected Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'206Pb/238U BiasPbc Corrected']+1)))**2*(df.loc[m,'1S 206Pb/238U BiasPbc Corrected'])**2 + 
                                                                                   (-np.log(df.loc[m,'206Pb/238U BiasPbc Corrected']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
                         df.loc[m,'1S 206Pb/238U BiasPbc Corrected Age'] = np.sqrt((df['1S 206Pb/238U BiasPbc Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
-                        df.loc[m,'238U/206Pb c'] = 1 /df.loc[m,'206Pb/238U BiasPbC Corrected'] # dummy so get_projections works
+                        df.loc[m,'238U/206Pb c'] = 1 /df.loc[m,'206Pb/238U BiasPbc Corrected'] # dummy so get_projections works
                         concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # reproject to account for any other variation and get concordant ages if desired
                         df.loc[m,'Concordant 206Pb/238U'] = 1/concordia_238_206[m]
                         df.loc[m,'Concordant 238U/206Pb'] = 1/df.loc[m,'Concordant 206Pb/238U']
-                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U Bias Corrected']/df.loc[m,'206Pb/238U Bias Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common64_se[m]/common64[m])**2)
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U BiasPbc Corrected']/df.loc[m,'206Pb/238U BiasPbc Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common64_se[m]/common64[m])**2)
                         df.loc[m,'Concordant Age'] = np.log(df.loc[m,'Concordant 206Pb/238U'] + 1) / lambda_238
                         df.loc[m,'1S Concordant Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'Concordant 206Pb/238U']+1)))**2*(df['1S Concordant 206Pb/238U'])**2 + 
                                                                 (-np.log(df.loc[m,'Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
@@ -1246,7 +1246,7 @@ class calc_fncs:
             df['206Pb/238U BiasTh Corrected Age'] = np.log(df['206Pb/238U BiasTh Corrected'] + 1) / lambda_238 # 6/38 common Pb corrected age
             df['1S 206Pb/238U BiasTh Corrected Age'] = np.sqrt((1/(lambda_238*(df['206Pb/238U BiasTh Corrected']+1)))**2*(df['1S 206Pb/238U BiasTh Corrected'])**2 + 
                                                                (-np.log(df['206Pb/238U BiasTh Corrected']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
-            df['1S 206Pb/238U Bias Corrected Age'] = np.sqrt((df['1S 206Pb/238U BiasTh Corrected Age'])**2 + ((df['tims_error_std']/2)/df['tims_age_std'])**2)
+            df['1S 206Pb/238U BiasTh Corrected Age'] = np.sqrt((df['1S 206Pb/238U BiasTh Corrected Age'])**2 + (df['tims_error_std']/2)**2)
             
             
             if Pbcmethod == '207Pb':
@@ -1309,7 +1309,7 @@ class calc_fncs:
                         concordia_238_206, pts_pb_r = calc_fncs.get_projections(df,common_207206_input) # reproject to account for any other variation and get concordant ages if desired
                         df.loc[m,'Concordant 206Pb/238U'] = 1/concordia_238_206[m]
                         df.loc[m,'Concordant 238U/206Pb'] = 1/df.loc[m,'Concordant 206Pb/238U']
-                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U BiasTh Corrected']/df.loc[m,'206Pb/238U BiasTh Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common64_se[m]/common64[m])**2)
+                        df.loc[m,'1S Concordant 206Pb/238U'] = df.loc[m,'Concordant 206Pb/238U']*np.sqrt((df.loc[m,'1S 206Pb/238U BiasThPbc Corrected']/df.loc[m,'206Pb/238U BiasThPbc Corrected'])**2 + (df.loc[m,'SE 207Pb/206Pb']/df.loc[m,'207Pb/206Pb c'])**2 + (common64_se[m]/common64[m])**2)
                         df.loc[m,'Concordant Age'] = np.log(df.loc[m,'Concordant 206Pb/238U'] + 1) / lambda_238
                         df.loc[m,'1S Concordant Age'] = np.sqrt((1/(lambda_238*(df.loc[m,'Concordant 206Pb/238U']+1)))**2*(df.loc[m,'1S Concordant 206Pb/238U'])**2 + 
                                                                 (-np.log(df.loc[m,'Concordant 206Pb/238U']+1)/(lambda_238**2))**2*(lambda_238_2sig_percent/2/100*lambda_238)**2)
@@ -1523,14 +1523,14 @@ class calc_fncs:
         
         # note that the excess variance for 'Secondary Age' does not include excess variance calcs on NIST glass if requested. Relies solely on zircon data
         if calc_RM_ratio_errors == 'Secondary Age':
-            mswd_new = calc_fncs.mswd(df,'Concordant Age','206Pb/238U Age 1s (meas)')
+            mswd_new = calc_fncs.mswd(df,'Concordant Age','1S Concordant Age')
             
             while mswd_new > 1.0000:
-                df['206Pb/238U Reg. err'] = df['206Pb/238U Reg. err'] + added_error_percent*df['206Pb/238U Reg. err']
+                df['1S Concordant 206Pb/238U'] = df['1S Concordant 206Pb/238U'] + added_error_percent*df['1S Concordant 206Pb/238U']
                 df['SE% 207Pb/206Pb'] = df['SE% 207Pb/206Pb'] + added_error_percent*100
-                df['206Pb/238U Age 1s (meas) iterate'] = df['Concordant Age'] * ((df['206Pb/238U Reg. err']/df['206Pb/238U_unc'])**2 + (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
+                df['1S Concordant Age iterate'] = df['1S Concordant Age'] * ((df['1S Concordant 206Pb/238U']/df['Concordant 206Pb/238U'])**2 + (df['SE% 207Pb/206Pb']/100)**2)**(1/2)
                                                                                                                                                                
-                mswd_new = calc_fncs.mswd(df,'Concordant Age','206Pb/238U Age 1s (meas) iterate')
+                mswd_new = calc_fncs.mswd(df,'Concordant Age','1S Concordant Age iterate')
                 added_error_percent = added_error_percent+0.001
                 
             epi = added_error_percent
@@ -1540,12 +1540,12 @@ class calc_fncs:
         
         elif calc_RM_ratio_errors == 'Secondary Normalized Ratios':
             
-            mswd_new_pb206u238 = calc_fncs.mswd(df,'206Pb/238U c','206Pb/238U Reg. err')
+            mswd_new_pb206u238 = calc_fncs.mswd(df,'206Pb/238U Bias Corrected','1S 206Pb/238U Bias Corrected')
             
             while mswd_new_pb206u238 > 1.000:
-                df['206Pb/238U Reg. err iterate'] = df['206Pb/238U Reg. err'] + added_error_percent*df['206Pb/238U Reg. err']
+                df['1S 206Pb/238U Bias Corrected iterate'] = df['1S 206Pb/238U Bias Corrected'] + added_error_percent*df['1S 206Pb/238U Bias Corrected']
                 
-                mswd_new_pb206u238 = calc_fncs.mswd(df,'206Pb/238U c','206Pb/238U Reg. err iterate')
+                mswd_new_pb206u238 = calc_fncs.mswd(df,'2206Pb/238U Bias Corrected','1S 206Pb/238U Bias Corrected iterate')
                 added_error_percent = added_error_percent+0.001
             
             epipb206u238 = added_error_percent
@@ -2205,11 +2205,11 @@ class finalize_ages(param.Parameterized):
                                      '208Pb/232Th','SE% 208Pb/232Th',
                                      '206Pb/204Pb','SE% 206Pb/204Pb','207Pb/206Pb','207Pb/206Pb c','207Pb/206Pbr','SE 207Pb/206Pb','SE% 207Pb/206Pb','f_Pbc',
                                      '207Pb/235U','SE% 207Pb/235U','207Pb/235U Bias Corrected', '1S 207Pb/235U Bias Corrected', '207Pb/235U BiasPbc Corrected', '1S 207Pb/235U BiasPbc Corrected',
-                                     '206Pb/238U','238U/206Pb','206Pb/238U Bias Corrected','206Pb/238U BiasPbC Corrected','206Pb/238U BiasThPbC Corrected',
+                                     '206Pb/238U','238U/206Pb','206Pb/238U Bias Corrected','206Pb/238U BiasPbc Corrected','206Pb/238U BiasThPbc Corrected',
                                      'Concordant 206Pb/238U', '1S Concordant 206Pb/238U','Concordant 238U/206Pb','SE 206Pb/238U','SE% 206Pb/238U',
                                      'Weth C','Weth Wid1','Weth Wid2','Weth rho','TW C','TW Wid1','TW Wid2','TW rho',
-                                     '206Pb/238U Bias Corrected Age', '1S 206Pb/238U Bias Corrected Age', '206Pb/238U BiasPbC Corrected Age', '1S 206Pb/238U BiasPbC Corrected Age', '206Pb/238U BiasTh Corrected Age', '1S 206Pb/238U BiasTh Corrected Age','206Pb/238U BiasThPbC Corrected Age', '1S 206Pb/238U BiasThPbC Corrected Age','Concordant Age','1S Concordant Age',
-                                     '207Pb/235U Bias Corrected Age','207Pb/235U BiasPbC Corrected Age','207Pb/235U Age 1s',
+                                     '206Pb/238U Bias Corrected Age', '1S 206Pb/238U Bias Corrected Age', '206Pb/238U BiasPbc Corrected Age', '1S 206Pb/238U BiasPbc Corrected Age', '206Pb/238U BiasTh Corrected Age', '1S 206Pb/238U BiasTh Corrected Age','206Pb/238U BiasThPbc Corrected Age', '1S 206Pb/238U BiasThPbc Corrected Age','Concordant Age','1S Concordant Age',
+                                     '207Pb/235U Bias Corrected Age','207Pb/235U BiasPbc Corrected Age','207Pb/235U Age 1s',
                                     ]
             try:
                 output_df = output_df[full_output_cols_list]
