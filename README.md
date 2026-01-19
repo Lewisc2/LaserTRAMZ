@@ -51,7 +51,7 @@ ____________
 ## Part One: Analyte Reduction
 Running the script for Part One will open a page in your default web browser with a grey column and some default selections. `Copy + Paste` the file path to your LT_ready file into the bottom string input. After some loading time, an empty data table will pop up and the dropdown titled `Sample Subset` will be populated with the analyses in the file. Select one of these (it does not auto populate) and the program will load the data onto the screen:
 
-<img width="1061" alt="Screenshot 2025-03-20 at 3 34 25 PM" src="https://github.com/user-attachments/assets/19848f12-c55c-4b3f-8a5d-05fb1987bd07" />
+<img width="1287" height="874" alt="LTZPartIGeneral" src="https://github.com/user-attachments/assets/78a25ec9-bc1e-4211-ae7f-42783c4f5087" />
 
 The top graph shows the intensities for each analyte. The bottom left graph shows the time resolved ratios selected in the left banner. The bottom right graph will always only show the 207Pb/206Pb ratio. Note that the plots are interactable (e.g., panning, zooming, downloading, etc). Buttons at the top of the plot toggle the interaction options.
 
@@ -59,10 +59,11 @@ The top graph shows the intensities for each analyte. The bottom left graph show
 Background and ablation sliders are used to choose the respective intervals. These are plotted as dashed and solid lines, respectively. The Ablation Start True input allows the user to project the Pb/U ratios back to the start of ablation to deal wtih LIEF (Kosler et al., 2002). Experience leads me to recommended that you bind this to the ablation start by selecting the ablation start true button - the uncertainty will be smaller and the ratios will be more consistent.
 Sliders for the Y-axis limits are also shown. The default limits of the graphs can be changed by highlighting the numbers above the sliders and typing in a number.
 Buttons next to ratios and isotopes are for toggling these on the graphs. Ratios only change the bottom left graph. You may also put the intensities plot on a log scale.
-The Total Counts, Poisson, and Means and Regression buttons allow the user to change how the isotope ratios are handled.
+The Total Counts vs Means and Regression and Ratio of Means vs Geometric options allow the user to change how the isotope ratios are handled. The ratio of means vs geometric approaches are essentially a level down from the Total Counts vs Means and Regression choice.
 * Total Counts: Individual signals are integrated and a ratio of these 'total counts' is taken. See below for changing integration/dwell times.
-* Poisson: 207/206 ratios are dealt with according to the manuscript currently under review here: https://eartharxiv.org/repository/dashboard/8699/. Pb/U ratios are dealt with by regression (c.a. Paton et al., 2010).
 * Means and Regression: Pb/U ratios are dealt with by regression (c.a. Paton et al., 2010). Other ratios use the mean and SE of time-resolved ratios.
+* Ratio of means: The ratio of means approach is used to get the isotope ratios not treated with regressions. Uncertainties come from 1SE of analyte signals.
+* Geometric: Geometric means are used to calculate isotope ratios that are not treated with regressions. Uncertainties are the 1SE from the geometric distribution.
 
 Power: Changes the alpha value for the confidence ellipsoid. Leave at 0.05 for the typical 95% confidence ellipsoid.
 Arrayofdwelltimes: These are the dwell times for each analyte from low mass to high mass. By default everything is 10 ms. To change them simply type the dwell times into their respective position. Do NOT change any commas, brackets, etc.
@@ -76,26 +77,64 @@ The fitted regressions for the Pb/U ratios are shown in the top left graph. Resi
 
 ### Exporting Data
 Click the DDDT! button to export.
+
+### Uncertainty Estimation
+Uncertainty estimation follows propagation via Taylor expansion (e.g., Bevington and Robinson, 2003; Schmitz and Shoene, 2007) and are defined below. Assume that everything in parentheses below specifies the column header in the data output unless it is otherwise obvious this is not the case.
+
+For each analyte (e.g., 207Pb_1SE):
+
+$$
+\sigma_{i} = \left[(SE_{i}^{Meas})^{2} + (SE_{i}^{Back})^{2}\right]^{(1/2)}
+$$
+
+where $SE_{i}^{Meas}$ is the standard error of the measured/selected ablation interval, $SE_{i}^{Back}$ is the standard error of the selected background interval, and $i$ is the analyte of interest. In the case of 204Pb, the uncertainty of the 202Hg signal is also propagated in due to the necessary background subtraction of the 204Hg interference.
+
+For each ratio where uncertainties are assumed to be correlated (i.e., 238U/235U, Pb/Pb) and a Ratio of Means appraoch is chosen, the uncertainty on the ratios are:
+
+$$
+\sigma_R = R*\left[\left(\frac{\sigma_i}{i}\right)^2 + \left(\frac{\sigma_j}{j}\right)^2 - 2*\frac{\sigma^2_{ij}}{\bar{i}*\bar{j}}\right]^{1/2}
+$$
+
+where $R$ is the ratio of interest, $i$ and $j$ are the the analytes in the ratio with respective uncertainties defined above, $\sigma^2_{ij}$ is the covariance term between $i$ and $j$, and $\bar{i}$ is the average. 
+
+For ratios where there is not a downhole fractionation correction applied and uncertainties are uncorrelated (i.e., 238U/232Th, Pb/U, Pb/Th), the uncertainty on the ratios follows the above equation but disregards the third (covariance) term.
+
+If instead a downhole fractionation model is used by choosing the Means and Regression approach, the uncertainty on the ratios are:
+
+$$
+\sigma_R = R*\left[\left(\frac{\sigma_i}{i}\right)^2 + \left(\frac{\sigma_j}{j}\right)^2 + \left(\frac{SE^R_{intercept}}{R_{intercept}}\right)^2\right]^{1/2}
+$$
+
+where $SE^R_{intercept}$ is the standard error of the intercept estiamted from the fitted model, $R_{intercept}$ is the estimated value for the intercept, and all other variables have been defined above.
+
+If instead the Geometric aproach is taken, all uncertainties are the standard error of the geometric mean (i.e., the SD / sqrt(n)):
+
+$$
+\sigma_R = \frac{\left[\frac{1}{n-f}\sum_{k=1}^n(R_i-\bar{R})^2\right]^{1/2}}{n^{1/2}}
+$$
+
+where n is the number of detector passes, f is the degrees of freedom, and other variables have been defined above.
 ____________
 ## Part Two: Age Reduction
 ### Uploading and Setting reduction options
 Running the script for Part Two will open up a page in your default web browser. Copy and Paste the filepath from part one into the file path input at the top of the sidebar. A window will pop up that looks like the following:
 
-<img width="464" alt="Screenshot 2025-03-20 at 3 35 40 PM" src="https://github.com/user-attachments/assets/1258ef27-4e5c-4486-bd2e-d15b885377da" />
+<img width="568" height="881" alt="Screenshot 2026-01-19 at 7 48 21 AM" src="https://github.com/user-attachments/assets/496aa5d1-cb64-4101-9c15-9d877b1f8bca" />
 
 #### Input Options are in the order that follows:
 * Primary Standard: Start typing the standard you wish to use, which should have a name the same as the table above. A dropdown will pop-up and you can either click the standard name or finish typing.
 * Secondary Standard Excess Errors: Choose the standard you wish to use to evaluate excess variance according to the normalized ratios, c.a. Horstwood et al. (2016)
-* List of buttons with sample names: Check those you want to use as validation standards. You need at least one for the program to run
-* By Age, etc: Pb-Pb mass bias correction standard. If by Age, uses primary ZRM. Currently uses exponential correction of Woodhead (2002).
+* Other Secondary Stds: Check those you want to use as validation standards. You need at least one for the program to run
+* Pb/Pb Mass Bias Standard: Pb-Pb mass bias correction standard. If By Age, uses primary ZRM. Otherwise uses one of hte NIST standards chosen. Mass Bias correction uses exponential correction of Woodhead (2002).
 * Pb-Pb ratios list: Which measured Pb-Pb ratio to use for correcting Pb-Pb mass bias
-* Primary 238U/235U, ...: Which standard to use for correcting the 238/235 mass bias. Primary 238U/235U uses primary ZRM and assumes 137.818 (Hiess et al., 2012)
-* 238U/235U: Which ratio to use for correcting 38/35 bias. Currently only allows 38/35
-* By Age, None: Drift correct according to reduced standard ages or not at all.
-* Nearest Number: Nearest number of standards to use for correcting data. I.e., this is the sliding window of Gehrels et al. (2008)
+* Actinide Mass Bias Standard: Which standard to use for correcting the 238/235 mass bias. Primary 238U/235U uses primary ZRM and assumes 137.818 (Hiess et al., 2012).
+* Actinide Mass Bias Ratio: Which ratio to use for correcting 38/35 bias. Currently only allows 38/35
+* Pbc Correction Method: Method used to correct common Pb. 207 method uses projections to Concordia. 204 method uses measured 204. Note uncertainties depend on which method is used as described below.
+* Calculate Drift: Drift correct according to reduced standard ages via the sliding window method of Gehrels et al. (2008) or to not correct for drift.
+* Drift Correct to Nearest N Primary Standards: Number of nearest standards
 * Decay Series Corrections: Whether to correct just for Common Pb or to correct for Common Pb and Th Diseuqilibrium
-* Estimate Zircon [U/Th] By: How to estimate the [U/Th] concentration in zircon. For primary and selected secondary (same one as that used for excess variance), simply gets a factor according to the 238U and 232Th signals. Selecting Fitted regression standard will find all standards that you've selected (primary + those in the list of buttons) that have accepted concentrations and a simple linear regression will be used to make a calibration curve. If you have estimated the [U/Th] by some other way (e.g., split stream) you MUST manually enter these into the output from part one yourself. The column headers MUST be the following: [U] µg/g, [Th] µg/g, [U/Th].
-* Calculate D [Th/U] From: First option uses inputs below to estimate D [Th/U] for the Th-disequilibrium correction (e.g., if you want to assume a constant value). Second option uses the estimated [U/Th] and the input melt [U/Th] in the input below.
+* Estimate Zircon [U/Th] By: How to estimate the [U/Th] concentration in zircon. For primary and selected secondary (same one as that used for excess variance), a crude correction factor comes from the measured and accepted 238U and 232Th signals. Fitted Standard Regression will find all standards that you've selected (primary + those in the list of buttons) that have accepted concentrations and a simple linear regression will be used to make a calibration curve. If you have estimated the [U/Th] by some other way (e.g., split stream) you must manually enter these into the output from part one yourself. The column headers MUST be the following: [U] µg/g, [Th] µg/g, [U/Th].
+* Calculate D [Th/U] From: First option uses inputs below to estimate D [Th/U] for the Th-disequilibrium correction (e.g., if you want to assume a constant value). This will have to be input again for the unknowns after accepting the reduction parameters. Second option uses the estimated [U/Th] and the input melt [U/Th] in the input below.
 * Th/U Zircon: Th/U ratio to use in zircon for Th disequilibrium correction
 * Th/U Magma: Th/U ratio to use for host melt for Th disequilbrium correction
 * Calculate Excess Variance From: First option increases 6/38 and 7/6 uncertainty equally until selected secondary ages have an MSWD of one. Second option increases 6/38 and 7/6 uncertainty until the normalized ratios of the preferred secondary standard (selected above) have an MSWD of one. Third option increases the uncertainty of the raw primary standard ratios until an MSWD of one is achieved.
@@ -182,6 +221,7 @@ If you use LaserTRAMZ in your work, please citte it! See citation.cff file for c
 ____________
 ## References
 ```
+Bevington, P.R., and Robinson, D.K., 2003, Data reduction and error analysis for the physical sciences: Boston, Mass., McGraw-Hill, 320 p.
 Black, L.P. et al., 2004, Improved 206Pb/238U microprobe geochronology by the monitoring of a trace-element-related matrix effect; SHRIMP, ID–TIMS, ELA–ICP–MS and oxygen isotope documentation for a series of zircon standards: Chemical Geology, v. 205, p. 115–140, doi:10.1016/j.chemgeo.2004.01.003.
 Cheng, H., Edwards, R.L., Hoff, J., Gallup, C.D., Richards, D.A., and Asmerom, Y., 2000, The half-lives of uranium-234 and thorium-230: Chemical Geology, v. 169, p. 17–33, doi:10.1016/S0009-2541(99)00157-6.
 Gehrels, G.E., Valencia, V.A., and Ruiz, J., 2008, Enhanced precision, accuracy, efficiency, and spatial resolution of U-Pb ages by laser ablation-multicollector-inductively coupled plasma-mass spectrometry: TECHNICAL BRIEF: Geochemistry, Geophysics, Geosystems, v. 9, p. n/a-n/a, doi:10.1029/2007GC001805.
@@ -196,6 +236,7 @@ Mattinson, J.M., 1987, UPb ages of zircons: A basic examination of error prop
 Paces, J.B., and Miller, J.D., 1993, Precise U‐Pb ages of Duluth Complex and related mafic intrusions, northeastern Minnesota: Geochronological insights to physical, petrogenetic, paleomagnetic, and tectonomagmatic processes associated with the 1.1 Ga Midcontinent Rift System: Journal of Geophysical Research: Solid Earth, v. 98, p. 13997–14013, doi:10.1029/93JB01159.
 Pullen, A., Ibáñez-Mejia, M., Gehrels, G.E., Giesler, D., and Pecha, M., 2018, Optimization of a Laser Ablation-Single Collector-Inductively Coupled Plasma-Mass Spectrometer (Thermo Element 2) for Accurate, Precise, and Efficient Zircon U-Th-Pb Geochronology: Geochemistry, Geophysics, Geosystems, v. 19, p. 3689–3705, doi:10.1029/2018GC007889.
 Schmitz, M.D., and Bowring, S.A., 2001, U-Pb zircon and titanite systematics of the Fish Canyon Tuff: an assessment of high-precision U-Pb geochronology and its application to young volcanic rocks: Geochimica et Cosmochimica Acta, v. 65, p. 2571–2587, doi:10.1016/S0016-7037(01)00616-0.
+Schmitz, M.D., and Schoene, B., 2007, Derivation of isotope ratios, errors, and error correlations for U‐Pb geochronology using205 Pb‐235 U‐(233 U)‐spiked isotope dilution thermal ionization mass spectrometric data: Geochemistry, Geophysics, Geosystems, v. 8, p. 2006GC001492, doi:10.1029/2006GC001492.
 Sláma, J. et al., 2008, Plešovice zircon — A new natural reference material for U–Pb and Hf isotopic microanalysis: Chemical Geology, v. 249, p. 1–35, doi:10.1016/j.chemgeo.2007.11.005.
 Steiger, R.H., and Jäger, E., 1977, Subcommission on geochronology: Convention on the use of decay constants in geo- and cosmochronology: Earth and Planetary Science Letters, v. 36, p. 359–362, doi:10.1016/0012-821X(77)90060-7.
 Stern, R.A., Bodorkos, S., Kamo, S.L., Hickman, A.H., and Corfu, F., 2009, Measurement of SIMS Instrumental Mass Fractionation of Pb Isotopes During Zircon Dating: Geostandards and Geoanalytical Research, v. 33, p. 145–168, doi:10.1111/j.1751-908X.2009.00023.x.
