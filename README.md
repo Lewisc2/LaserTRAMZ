@@ -153,6 +153,190 @@ Tera-Waserburg and Wetherhill Concordia can be visualized by selecting the tabs 
 * The drift plot currently has some bugs and is mostly useful to load data first without drift correcting in order to assess how severe the drift is.
 * The excess variance plot shows the ages (for secondary standard options) and ratios of standard data used to calculate excess variance. Black bars are 2s. Red is the additional excess variance.
 
+### Uncertainty Estimation
+For Pb/Pb and U/U ratios corrected for mass bias by a mass fractionation factor via deviation of NIST standards from their accepted value or a zircon reference material, for example:
+
+$$
+R_c = \frac{207Pb}{206Pb}_c = \left(\frac{207Pb}{206Pb}\right) \left(\frac{m_{20x}}{m_{20y}}\right)^f
+$$
+where
+$$
+f = \frac{ ln\left(\frac{R_{True}}{R_{Measured}} \right) }{ln\left(\frac{m_{20x}}{m_{20y}}\right) }
+$$
+
+The uncertainty is:
+
+$$
+\sigma_{R_{c}}^{2} = \left(\frac{\partial R_c}{\partial R_{Measured}}\right)^2 \sigma_{R_{Measured}}^2 + \left(\frac{\partial R_c}{\partial f}\right)^2 \sigma_{f}^2
+$$
+
+The term for $\sigma_{R_{Measured}}$ is given above. The term for $\sigma_{f}^2$ is:
+
+$$
+\sigma_{f}^2 = \left(\frac{\partial f}{\partial R_{True}}\right)^2 \sigma_{R_{True}}^2 + \left(\frac{\partial f}{\partial R_{Measured}}\right)^2 \sigma_{R_{Measured}}^2
+$$
+
+Here, $\sigma_{R_{True}}^2$ comes from the certified value and $\sigma_{R_{Measured}}^2$ is given above. The partial differentials are:
+
+$$
+\left(\frac{\partial f}{\partial R_{True}}\right) = \frac{1}{ln\left(\frac{m_{20x}}{m_{20y}}\right)} \frac{1}{R_{True}}
+$$
+
+$$
+\left(\frac{\partial f}{\partial R_{Measured}}\right) = -\frac{1}{R_{Measured}ln\left(\frac{m_{20x}}{m_{20y}}\right)}
+$$
+
+Substituting back into $\sigma_{f}^2$ gives:
+
+$$
+\sigma_{f}^2 = \left(\frac{\sigma_{R_{True}}}{R_{True}ln\left(\frac{m_{20x}}{m_{20y}}\right)}\right)^2 + \left(-\frac{\sigma_{R_{Measured}}}{R_{Measured}ln\left(\frac{m_{20x}}{m_{20y}}\right)}\right)^2
+$$
+
+Now, we need the partials for $\sigma_{R_{c}}^{2}$ which are:
+
+$$
+\left(\frac{\partial R_c}{\partial R_{Measured}}\right) = \left(\frac{m_{20x}}{m_{20y}}\right)^f
+$$
+
+$$
+\left(\frac{\partial R_c}{\partial f}\right) = R_{Measured} \left(\frac{m_{20x}}{m_{20y}}\right) ln\left(\frac{m_{20x}}{m_{20y}}\right)
+$$
+
+Substituting all the terms back in for the uncertainty of the mass bias corrected ratio $R_c$, we get:
+
+$$
+\sigma_{R_{c}} = \left[ \left(\frac{m_{20x}}{m_{20y}}\right)^{2f} \sigma^2_{R_{Measured}} + \left[R_{Measured} \left(\frac{m_{20x}}{m_{20y}}\right)^f ln\left(\frac{m_{20x}}{m_{20y}}\right) \right]^2 \sigma_f^2 \right]^{1/2}
+$$
+
+Again, $\sigma^2_{R_{Measured}}$ and $\sigma_f^2$ are defined above. Similar equations are used for all mass bias corrected ratios.
+
+
+Now we will define the uncertainties associated with Pb/U ratios.
+
+As explained above, concordant ratios from Tera-Wasserburg Concordia calculated in LaserTRAMZ are on a point-by-point basis by forming a two point line between the measured ratios and common Pb - i.e., the 207Pb correction method. For the concordant Pb-U ratios the uncertainties outlined above are added in quadrature with the common Pb uncertainty. Note the common Pb uncertainty is taken either from the user input or the propagated uncertainty of the Stacey-Kramers model. So, using the 206/238 ratio as an example:
+
+$$
+\sigma_{206Pb/238U_{Concordant}} = \left[\sigma^2_{206Pb/238U_{c}} + \sigma^2_{207Pb/206Pb_c} + \sigma^2_{Pb_c} \right]^{1/2}
+$$
+
+where $sigma^2_{207Pb/206Pb_c}$ comes from the mass bias corrected ratio uncertianty defined immediately above and $\sigma^2_{Pb_c}$ is the common Pb uncertainty. $\sigma^2_{^{206}Pb/^{238}U_{c}}$ is the fractionation corrected 206Pb/238U, which is calculated from the measured ratio and a crude fractionation factor, as described above. Explicitly, the ratio and its uncertainty are:
+
+$$
+\left(\frac{^{206}Pb}{^{238}U}\right)_c = \left(\frac{^{206}Pb}{^{238}U}\right)_{Measured} * D
+$$
+
+$$
+\sigma^2_{\left(\frac{^{206}Pb}{^{238}U}\right)_c} = \left(\frac{\partial \left(\frac{^{206}Pb}{^{238}U}\right)_c}{\partial \left(\frac{^{206}Pb}{^{238}U}\right)_{Measured}} \right)^2 \sigma^2_{\left(\frac{^{206}Pb}{^{238}U}\right)_{Measured}} + \left(\frac{\partial \left(\frac{^{206}Pb}{^{238}U}\right)_c}{\partial D} \right)^2 \sigma^2_D = \left(D \sigma^2_{\left(\frac{^{206}Pb}{^{238}U}\right)_{Measured}} + \left(\frac{^{206}Pb}{^{238}U}\right)_{Measured} \sigma^2_D \right)^2
+$$
+
+Where $\sigma^2_D$ can be determined from the standard error of the measured standard 206Pb/238U ratios and all other terms are defined above. This can now be directly plugged into the equation for the concordant 206Pb/238U ratio.
+
+For the case that we also correct for Th-disequilibrium and still use hte 207Pb correction method, the 206Pb/238U ratio is calculated as:
+
+$$
+R = \left(\frac{206Pb}{238U} \right)_c = \left(\frac{206Pb}{238U}\right)_{Measured} D - \left[\frac{\lambda_{238}}{\lambda_{230}} \left(\frac{Th/U_{Zrn}}{Th/U_{melt}} -1 \right) \right] 
+$$
+
+The uncertainty on this ratio is
+
+$$
+\sigma^2_R = \left(\frac{\partial R}{\partial \left(\frac{206Pb}{238U}\right)_{Measured}} \right)^2 \sigma^2_{\left(\frac{206Pb}{238U}\right)_{Measured}} + + \left(\frac{\partial R}{\partial D} \right)^2 \sigma^2_D + \left(\frac{\partial R}{\partial \lambda_{238}} \right)^2 \sigma^2_{\lambda_238} + \left(\frac{\partial R}{\partial \lambda_{230}} \right)^2 \sigma^2_{\lambda_{230}}
+$$
+
+where the $\sigma$ for all terms are defined above or are taken directly from the literature according to references above. The partials can be calculated as:
+
+$$
+\frac{\partial R}{\partial \left(\frac{206Pb}{238U}\right)_{Measured}} = D
+$$
+
+$$
+\frac{\partial R}{\partial D} = \left(\frac{206Pb}{238U}\right)_{Measured}
+$$
+
+$$
+\frac{\partial R}{\partial \lambda_{238}} = -\frac{\left[Th/U\right]_{Zrn} - \left[Th/U\right]_{Melt}}{\lambda_{230}\left[Th/U\right]_{Melt}}
+$$
+
+$$
+\frac{\partial R}{\partial \lambda_{230}} = \frac{\lambda_{238}\left(\left[Th/U\right]_{Zrn} -  \left[Th/U\right]_{Melt}\right)}{\lambda_{230}^2\left[Th/U\right]_{Melt}}
+$$
+
+Which can all be plugged directly into the term for the uncertainty on the 207Pb and Th-disequilibrium corrected ratio above. Note this assumes no uncertainty on Th/U. I ignore this because even the uncertainty on certified Th/U concentrations in standard reference materials would introduce enormous uncertainties if carried through via Taylor Expansion.
+
+Now we'll treat the $206Pb/238U$ only corrected for by mass bias and the 204Pb method. We have:
+
+$$
+R = \left(\frac{206Pb}{238U} \right)_c = \left(\frac{206Pb}{238U} \right)_{Measured}D - \left[\left(\frac{206Pb}{238U} \right)_{Measured}D\right] f_{Pb_c}
+$$
+
+where f is the fraction of common Pb defined as the common 207Pb/206Pb divided by the measured 207Pb/206Pb:
+
+$$
+f_{Pb_c} = \frac{206Pb/204Pb_{common}} {206Pb/204Pb_{Measured}}
+$$
+
+The uncertainty on the ratio is then:
+
+$$
+\sigma^2_R = \left(\frac{\partial R}{\partial \left(\frac{206Pb}{238U}\right)_{Measured}}\right)^2 \sigma^2_{\left(\frac{206Pb}{238U}\right)_{Measured}} + \left(\frac{\partial R}{\partial D}\right)^2 \sigma^2_D + \left(\frac{\partial R}{\partial f_{Pb_c}}\right)^2 \sigma^2_{f_{Pb_c}}
+$$
+
+we can get the $\sigma^2_{f_{Pb_c}}$ as:
+
+$$
+\sigma_{f_{Pb_c}} = f_{Pb_c} \left[ \left(\frac{\sigma_{206Pb/204Pb_{common}}}{206Pb/204Pb_{common}}\right)^2 + \left(\frac{\sigma_{206Pb/204Pb_{Measured}}}{206Pb/204Pb_{Measured}} \right)^2   \right]^{1/2}
+$$
+
+All the $\sigma$ terms and ratios are already define above. Now we can get the partials as:
+
+$$
+\frac{\partial R}{\partial \left(\frac{206Pb}{238U}\right)_{Measured}} = D \left(1-f_{Pb_c}\right)
+$$
+
+$$
+\frac{\partial R}{\partial D} = \left(\frac{206Pb}{238U}\right)_{Measured} \left(1- \left(\frac{206Pb}{238U}\right)_{Measured} f_{Pb_c} \right)
+$$
+
+$$
+\frac{\partial R}{\partial f_{Pb_c}} = - \left(\frac{206Pb}{238U}\right)_{Measured} D
+$$
+
+All of these partials can then be plugged in above. Now lets say we want to correct for mass bias, Th-disequilibrium, and the 204Pb method for common Pb. The ratio is:
+
+$$
+R = \left(\frac{206Pb}{238U} \right)_c = \left[ \left(\frac{206Pb}{238U}\right)_{Measured} D - \left[\frac{\lambda_{238}}{\lambda_{230}} \left(\frac{\left[Th/U\right]_{Zrn}}{\left[Th/U\right]_{Melt}} -1 \right) \right] \right] - \left[\left(\frac{206Pb}{238U}\right)_{Measured} D - \frac{\lambda_{238}}{\lambda_{230}} \left(\frac{\left[Th/U\right]_{Zrn}}{\left[Th/U\right]_{Melt}} -1 \right) \right] f_{Pb_c}
+$$
+
+The uncertainty on this ratio is:
+
+$$
+\sigma^2_R = \left(\frac{\partial R}{\partial \left(\frac{206Pb}{238U}\right)_{Measured}}\right)^2 \sigma^2_{\left(\frac{206Pb}{238U}\right)_{Measured}} + \left(\frac{\partial R}{\partial D}\right)^2 \sigma^2_D + \left(\frac{\partial R}{\partial f_{Pb_c}}\right)^2 \sigma^2_{f_{Pb_c}} + \left(\frac{\partial R}{\partial \lambda_{238}} \right)^2 \sigma^2_{\lambda_238} + \left(\frac{\partial R}{\partial \lambda_{230}} \right)^2 \sigma^2_{\lambda_{230}}
+$$
+
+All of the $\sigma$ terms are defined above. The partials are:
+
+$$
+\frac{\partial R}{\partial \left(\frac{206Pb}{238U}\right)_{Measured}} = D\left(1-f_{Pb_c}\right)
+$$
+
+$$
+\frac{\partial R}{\partial D} = \left(\frac{206Pb}{238U}\right)_{Measured} \left(1-f_{Pb_c}\right)
+$$
+
+$$
+\frac{\partial R}{\partial \lambda_{238}} = -\frac{\left[Th/U\right]_{Zrn} - \left[Th/U\right]_{Melt}}{\lambda_{230} \left[Th/U\right]_{Melt}} + f_{Pb_c} \frac{\left[Th/U\right]_{Zrn} - \left[Th/U\right]_{Melt}}{\lambda_{230} \left[Th/U\right]_{Melt}}
+$$
+
+$$
+\frac{\partial R}{\partial \lambda_{230}} = \frac{\lambda_{238} \left(\left[Th/U\right]_{Zrn} - \left[Th/U\right]_{Melt} \right)}{\lambda_{230}^2 \left[Th/U\right]_{Melt}} - f_{Pb_c} \frac{\lambda_{238} \left(\left[Th/U\right]_{Zrn} - \left[Th/U\right]_{Melt} \right)}{\lambda_{230}^2 \left[Th/U\right]_{Melt}}
+$$
+
+$$
+\frac{\partial R}{\partial f_{Pb_c}} = - \left(\frac{206Pb}{238U}\right)_{Measured} D + \lambda_{238}\left(\frac{\left[Th/U\right]_{Zrn} - \left[Th/U\right]_{Melt}}{\lambda_{230} \left[Th/U\right]_{Melt}} \right)
+$$
+
+Finally, all of these can be plugged in above for the 206Pb/238U treated by this manner.
+
 #### The following standards have published concentrations for U and Th. Note Plesovice is not included due to the known heterogeneity (Slama et al., 2008). Choosing a standard(s) that does not have published concentrations and selecting an option that includes that (those) standard(s) to estimate concentrations will result in erroneous concentration estimations for unknowns (values set to 1e-7 in the script to avoid divide by zero errors).
 * Temora
 * Fish Canyon
