@@ -55,7 +55,7 @@ ipykernel==6.29.5
 ipython==8.30.0
 isort==6.0.1
 jaraco.classes==3.2.1
-jaraco.context==0.0.0
+jaraco.context
 jaraco.functools==4.1.0
 jedi==0.19.2
 jellyfish==1.1.3
